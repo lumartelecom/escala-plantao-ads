@@ -1,0 +1,1175 @@
+﻿<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard de Indicadores</title>
+  <style>
+    :root {
+      --ink:#17202a; --muted:#667085; --line:#d9dee7; --paper:#f5f7fa;
+      --panel:#ffffff; --green:#138a5e; --blue:#2563a9; --amber:#b7791f; --red:#bd3b3b;
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Arial, Helvetica, sans-serif; color:var(--ink); background:var(--paper); }
+    html { scroll-behavior:smooth; }
+    header { padding:14px 34px 12px; background:#ffffff; border-bottom:1px solid var(--line); text-align:center; }
+    .brand-logo { display:block; width:72px; height:72px; object-fit:contain; margin:0 auto 8px; border-radius:4px; opacity:.92; }
+    h1 { margin:0; font-size:20px; font-weight:700; letter-spacing:.4px; text-transform:uppercase; }
+    main { padding:16px 34px 28px; }
+    .import-panel { display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px; color:var(--muted); font-size:12px; }
+    .import-button { display:inline-flex; align-items:center; justify-content:center; min-height:30px; padding:0 12px; border:1px solid var(--line); border-radius:7px; background:#fff; color:var(--ink); cursor:pointer; font-size:12px; font-weight:700; }
+    .import-button:hover { border-color:var(--blue); }
+    .import-button input { display:none; }
+    .action-button { min-height:30px; padding:0 12px; border:1px solid var(--line); border-radius:7px; background:#fff; color:var(--ink); cursor:pointer; font-size:12px; font-weight:700; }
+    .action-button.primary { border-color:var(--blue); background:#f6f9fd; color:var(--blue); }
+    .action-button:hover { border-color:var(--blue); }
+    .kpis { width:min(620px, 100%); margin:0 auto; display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; align-items:center; justify-items:center; }
+    .dashboard-actions { display:flex; justify-content:center; margin-bottom:12px; }
+    .eval-button { width:104px; min-height:58px; border-radius:7px; background:#ffffff; border:2px solid var(--blue); color:var(--ink); display:flex; flex-direction:column; justify-content:center; align-items:center; gap:1px; text-align:center; text-decoration:none; box-shadow:0 6px 14px rgba(15, 23, 42, .08); transition:transform .18s ease, box-shadow .18s ease; }
+    .eval-button:hover { transform:translateY(-3px); box-shadow:0 16px 34px rgba(15, 23, 42, .16); }
+    .eval-button span { color:#344054; font-size:10px; line-height:1.1; }
+    .eval-button strong { font-size:24px; line-height:1; }
+    .kpi { width:188px; aspect-ratio:1; border-radius:999px; padding:18px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; text-decoration:none; color:var(--ink); box-shadow:0 8px 18px rgba(15, 23, 42, .10); transition:transform .18s ease, box-shadow .18s ease; }
+    .kpi:hover { transform:translateY(-3px); box-shadow:0 16px 34px rgba(15, 23, 42, .18); }
+    .kpi.in-meta { background:#e9f8f0; border:3px solid #1f9d67; }
+    .kpi.out-meta { background:#fdeceb; border:3px solid #d64545; }
+    .kpi span { display:block; color:#344054; font-size:15px; line-height:1.2; min-height:34px; display:flex; align-items:center; }
+    .kpi strong { display:block; margin:6px 0; font-size:29px; }
+    .kpi small { color:#475467; line-height:1.25; font-size:11px; }
+    .grid { display:grid; grid-template-columns:1.1fr .9fr; gap:18px; align-items:start; }
+    .panel { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:18px; margin-bottom:18px; }
+    h2 { margin:0 0 14px; font-size:17px; }
+    .bar-row { display:grid; grid-template-columns:minmax(130px, 1fr) 2fr 72px; gap:12px; align-items:center; padding:8px 0; border-top:1px solid #edf0f4; }
+    .bar-row:first-of-type { border-top:0; }
+    .bar-label { font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .bar-track { height:12px; background:#edf1f5; border-radius:999px; overflow:hidden; }
+    .bar-track span { display:block; height:100%; background:var(--blue); border-radius:999px; }
+    .bar-value { text-align:right; color:var(--muted); font-size:13px; }
+    table { width:100%; border-collapse:collapse; table-layout:fixed; }
+    th, td { padding:10px 8px; border-top:1px solid #edf0f4; text-align:left; vertical-align:middle; font-size:13px; }
+    th { color:var(--muted); font-weight:600; border-top:0; }
+    td:nth-child(2), td:nth-child(4) { text-align:right; }
+    .tech { display:block; font-weight:700; }
+    td small { display:block; color:var(--muted); margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .mini { height:8px; background:#edf1f5; border-radius:999px; overflow:hidden; }
+    .mini span { display:block; height:100%; background:var(--green); border-radius:999px; }
+    .rate { font-weight:700; }
+    .summary { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+    .modal { position:fixed; inset:0; z-index:20; display:flex; align-items:center; justify-content:center; padding:28px; opacity:0; visibility:hidden; pointer-events:none; transition:opacity .22s ease, visibility .22s ease; }
+    .modal:target { opacity:1; visibility:visible; pointer-events:auto; }
+    .modal-backdrop { position:absolute; inset:0; background:rgba(15, 23, 42, .56); backdrop-filter:blur(3px); }
+    .modal-card { position:relative; z-index:1; width:min(1180px, 100%); max-height:86vh; overflow:auto; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:20px; box-shadow:0 24px 70px rgba(15, 23, 42, .28); animation:fadeUp .24s ease; }
+    .compact-modal { width:min(860px, 100%); }
+    @keyframes fadeUp { from { transform:translateY(12px); opacity:.7; } to { transform:translateY(0); opacity:1; } }
+    .detail-head { display:flex; justify-content:space-between; gap:14px; align-items:flex-start; margin-bottom:14px; }
+    .detail-head p { margin:4px 0 0; color:var(--muted); font-size:13px; }
+    .close-link { color:var(--blue); font-size:13px; font-weight:700; text-decoration:none; }
+    .close-link:hover { text-decoration:underline; }
+    .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:start; }
+    h3 { margin:0 0 8px; font-size:14px; color:var(--muted); }
+    .empty { color:var(--muted); text-align:center; padding:18px 8px; }
+    .tech-list { display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:10px; }
+    .tech-list-item { display:block; border:1px solid var(--line); border-radius:8px; padding:12px; color:var(--ink); text-decoration:none; background:#fff; }
+    .tech-list-item:hover { border-color:var(--blue); background:#f6f9fd; }
+    .tech-list-item span { display:block; font-weight:700; }
+    .tech-list-item small { display:block; color:var(--muted); margin-top:4px; }
+    .ok-row .mini span { background:var(--green); }
+    .bad-row .mini span { background:var(--red); }
+    .ok-row .rate { color:var(--green); }
+    .bad-row .rate { color:var(--red); }
+    @media (max-width:780px) { .kpis { width:min(440px, 100%); grid-template-columns:repeat(2, 1fr); } .kpi { width:188px; } .grid, .summary, .detail-grid { grid-template-columns:1fr; } }
+    @media (max-width:520px) { .kpis { grid-template-columns:1fr; } .kpi { width:min(230px, 100%); } .modal { padding:12px; } }
+    @media print {
+      body { background:#fff; }
+      main, header { padding:18px; }
+      .panel, .kpi { break-inside:avoid; }
+    }
+  </style>
+</head>
+<body>
+  <header id="topo">
+    <img class="brand-logo" src="lumar-logo.png" alt="Lumar Telecom">
+    <h1>Indicadores Tecnicos de Adesao</h1>
+  </header>
+  <main>
+    <section class="import-panel">
+      <label class="import-button">Escolher base
+        <input id="xlsxInput" type="file" accept=".xlsx">
+      </label>
+      <button class="action-button primary" id="loadBaseButton" type="button">Carregar</button>
+      <button class="action-button" id="clearBaseButton" type="button">Limpar</button>
+      <span id="importStatus">Usando base atual</span>
+    </section>
+    <section class="dashboard-actions">
+      <a class='eval-button' href='#tecnicos-avaliados'><span>Tecnicos avaliados</span><strong>23</strong></a>
+    </section>
+    <section class="kpis">
+      <a class='kpi in-meta' href='#detalhe-tec1'><span>TEC1</span><strong>95,0%</strong><small>Base 3.766<br>Dentro: 11 | Fora: 12</small></a>
+<a class='kpi in-meta' href='#detalhe-tnps'><span>TNPS</span><strong>95,1%</strong><small>Base 81<br>Dentro: 18 | Fora: 2</small></a>
+<a class='kpi in-meta' href='#detalhe-ura'><span>URA</span><strong>88,5%</strong><small>Base 148<br>Dentro: 15 | Fora: 6</small></a>
+<a class='kpi out-meta' href='#detalhe-nr35'><span>NR35</span><strong>78,5%</strong><small>Base 506<br>Dentro: 14 | Fora: 9</small></a>
+<a class='kpi out-meta' href='#detalhe-geo'><span>Geolocalizacao</span><strong>94,9%</strong><small>Base 2.028<br>Dentro: 14 | Fora: 9</small></a>
+<a class='kpi out-meta' href='#detalhe-qq'><span>Quadra Qualificada</span><strong>75,4%</strong><small>Base 3.970<br>Dentro: 0 | Fora: 23</small></a>
+    </section>
+    <section class="details">
+      <section class="modal" id="detalhe-tec1">
+  <a class="modal-backdrop" href="#topo" aria-label="Fechar"></a>
+  <div class="modal-card">
+    <div class="detail-head">
+      <div>
+        <h2>TEC1</h2>
+        <p>Meta: 95,0% | Dentro: 11 | Fora: 12</p>
+      </div>
+      <a class="close-link" href="#topo">Fechar</a>
+    </div>
+    <div class="detail-grid">
+      <div>
+        <h3>Dentro da meta</h3>
+        <table><thead><tr><th>Tecnico</th><th>Base</th><th>Indice</th><th>%</th></tr></thead><tbody><tr class='ok-row'><td><span class='tech'>Z412061</span><small>EDSON CARVALHO</small></td><td>156</td><td><div class='mini'><span style='width:99%'></span></div></td><td class='rate'>99,4%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z597204</span><small>ADRYEL NASCIMENTO</small></td><td>176</td><td><div class='mini'><span style='width:99%'></span></div></td><td class='rate'>98,9%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z592082</span><small>SEBASTIAO COSTA</small></td><td>142</td><td><div class='mini'><span style='width:99%'></span></div></td><td class='rate'>98,6%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z445950</span><small>MATEUS REIS</small></td><td>133</td><td><div class='mini'><span style='width:98%'></span></div></td><td class='rate'>98,5%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z342779</span><small>CARLOS GOMES</small></td><td>171</td><td><div class='mini'><span style='width:98%'></span></div></td><td class='rate'>98,2%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z602983</span><small>PEDRO GOMES</small></td><td>138</td><td><div class='mini'><span style='width:97%'></span></div></td><td class='rate'>97,1%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z597205</span><small>JOAO MACEDO</small></td><td>169</td><td><div class='mini'><span style='width:97%'></span></div></td><td class='rate'>97,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z495212</span><small>KAYO MACEDO</small></td><td>228</td><td><div class='mini'><span style='width:96%'></span></div></td><td class='rate'>96,5%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z615960</span><small>ALEXANDRE F</small></td><td>139</td><td><div class='mini'><span style='width:96%'></span></div></td><td class='rate'>96,4%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z616340</span><small>JEFFERSON SILVA</small></td><td>135</td><td><div class='mini'><span style='width:96%'></span></div></td><td class='rate'>95,6%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z212955</span><small>FRANCISCO SILVA</small></td><td>235</td><td><div class='mini'><span style='width:95%'></span></div></td><td class='rate'>95,3%</td></tr></tbody></table>
+      </div>
+      <div>
+        <h3>Fora da meta</h3>
+        <table><thead><tr><th>Tecnico</th><th>Base</th><th>Indice</th><th>%</th></tr></thead><tbody><tr class='bad-row'><td><span class='tech'>Z419992</span><small>JULIO SOUSA</small></td><td>175</td><td><div class='mini'><span style='width:90%'></span></div></td><td class='rate'>89,7%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z593006</span><small>IVONALDO LIMA</small></td><td>110</td><td><div class='mini'><span style='width:90%'></span></div></td><td class='rate'>90,0%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z508829</span><small>RODRIGO MARQUES</small></td><td>173</td><td><div class='mini'><span style='width:91%'></span></div></td><td class='rate'>90,8%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z502796</span><small>GILMAR SILVA</small></td><td>159</td><td><div class='mini'><span style='width:92%'></span></div></td><td class='rate'>91,8%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z417376</span><small>JEFFERSON SILVA</small></td><td>187</td><td><div class='mini'><span style='width:92%'></span></div></td><td class='rate'>92,5%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z537229</span><small>PEDRO LIMA</small></td><td>187</td><td><div class='mini'><span style='width:92%'></span></div></td><td class='rate'>92,5%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z627201</span><small>FELIPE SILVA</small></td><td>155</td><td><div class='mini'><span style='width:93%'></span></div></td><td class='rate'>92,9%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z585518</span><small>DAVID BARROS</small></td><td>142</td><td><div class='mini'><span style='width:94%'></span></div></td><td class='rate'>94,4%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z597203</span><small>JOSE LUZ</small></td><td>144</td><td><div class='mini'><span style='width:94%'></span></div></td><td class='rate'>94,4%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z592144</span><small>ITALO NASCIMENTO</small></td><td>188</td><td><div class='mini'><span style='width:95%'></span></div></td><td class='rate'>94,7%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z537228</span><small>MARCOS SANTOS</small></td><td>190</td><td><div class='mini'><span style='width:95%'></span></div></td><td class='rate'>94,7%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z602984</span><small>PEDRO COSTA</small></td><td>134</td><td><div class='mini'><span style='width:95%'></span></div></td><td class='rate'>94,8%</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="modal" id="detalhe-tnps">
+  <a class="modal-backdrop" href="#topo" aria-label="Fechar"></a>
+  <div class="modal-card">
+    <div class="detail-head">
+      <div>
+        <h2>TNPS</h2>
+        <p>Meta: 95,0% | Dentro: 18 | Fora: 2</p>
+      </div>
+      <a class="close-link" href="#topo">Fechar</a>
+    </div>
+    <div class="detail-grid">
+      <div>
+        <h3>Dentro da meta</h3>
+        <table><thead><tr><th>Tecnico</th><th>Base</th><th>Indice</th><th>%</th></tr></thead><tbody><tr class='ok-row'><td><span class='tech'>Z412061</span><small>Z412061</small></td><td>5</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z419992</span><small>Z419992</small></td><td>4</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z537228</span><small>Z537228</small></td><td>4</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z592082</span><small>Z592082</small></td><td>4</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z615960</span><small>Z615960</small></td><td>4</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z495212</span><small>Z495212</small></td><td>3</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z585518</span><small>Z585518</small></td><td>3</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z597204</span><small>Z597204</small></td><td>3</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z602984</span><small>Z602984</small></td><td>3</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z616340</span><small>Z616340</small></td><td>3</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z627201</span><small>Z627201</small></td><td>3</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z593006</span><small>Z593006</small></td><td>2</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z597205</span><small>Z597205</small></td><td>2</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z342779</span><small>Z342779</small></td><td>1</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z417376</span><small>Z417376</small></td><td>1</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z502796</span><small>Z502796</small></td><td>1</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z592144</span><small>Z592144</small></td><td>1</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z212955</span><small>Z212955</small></td><td>28</td><td><div class='mini'><span style='width:96%'></span></div></td><td class='rate'>96,4%</td></tr></tbody></table>
+      </div>
+      <div>
+        <h3>Fora da meta</h3>
+        <table><thead><tr><th>Tecnico</th><th>Base</th><th>Indice</th><th>%</th></tr></thead><tbody><tr class='bad-row'><td><span class='tech'>Z602983</span><small>Z602983</small></td><td>4</td><td><div class='mini'><span style='width:50%'></span></div></td><td class='rate'>50,0%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z597203</span><small>Z597203</small></td><td>2</td><td><div class='mini'><span style='width:50%'></span></div></td><td class='rate'>50,0%</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="modal" id="detalhe-ura">
+  <a class="modal-backdrop" href="#topo" aria-label="Fechar"></a>
+  <div class="modal-card">
+    <div class="detail-head">
+      <div>
+        <h2>URA</h2>
+        <p>Meta: 85,0% | Dentro: 15 | Fora: 6</p>
+      </div>
+      <a class="close-link" href="#topo">Fechar</a>
+    </div>
+    <div class="detail-grid">
+      <div>
+        <h3>Dentro da meta</h3>
+        <table><thead><tr><th>Tecnico</th><th>Base</th><th>Indice</th><th>%</th></tr></thead><tbody><tr class='ok-row'><td><span class='tech'>Z597204</span><small>ADRYEL NASCIMENTO</small></td><td>10</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z592144</span><small>ITALO NASCIMENTO</small></td><td>8</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z597203</span><small>JOSE LUZ</small></td><td>8</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z502796</span><small>GILMAR SILVA</small></td><td>7</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z419992</span><small>JULIO SOUSA</small></td><td>7</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z602983</span><small>PEDRO GOMES</small></td><td>7</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z508829</span><small>RODRIGO MARQUES</small></td><td>7</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z585518</span><small>DAVID BARROS</small></td><td>6</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z602984</span><small>PEDRO COSTA</small></td><td>4</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z537229</span><small>PEDRO LIMA</small></td><td>4</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z593006</span><small>IVONALDO LIMA</small></td><td>3</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z412061</span><small>EDSON CARVALHO</small></td><td>2</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z495212</span><small>KAYO MACEDO</small></td><td>13</td><td><div class='mini'><span style='width:92%'></span></div></td><td class='rate'>92,3%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z212955</span><small>FRANCISCO SILVA</small></td><td>8</td><td><div class='mini'><span style='width:88%'></span></div></td><td class='rate'>87,5%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z615960</span><small>ALEXANDRE F</small></td><td>7</td><td><div class='mini'><span style='width:86%'></span></div></td><td class='rate'>85,7%</td></tr></tbody></table>
+      </div>
+      <div>
+        <h3>Fora da meta</h3>
+        <table><thead><tr><th>Tecnico</th><th>Base</th><th>Indice</th><th>%</th></tr></thead><tbody><tr class='bad-row'><td><span class='tech'>Z597205</span><small>JOAO MACEDO</small></td><td>4</td><td><div class='mini'><span style='width:50%'></span></div></td><td class='rate'>50,0%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z537228</span><small>MARCOS SANTOS</small></td><td>13</td><td><div class='mini'><span style='width:69%'></span></div></td><td class='rate'>69,2%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z445950</span><small>MATEUS REIS</small></td><td>10</td><td><div class='mini'><span style='width:70%'></span></div></td><td class='rate'>70,0%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z417376</span><small>JEFFERSON SILVA</small></td><td>7</td><td><div class='mini'><span style='width:71%'></span></div></td><td class='rate'>71,4%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z592082</span><small>SEBASTIAO COSTA</small></td><td>7</td><td><div class='mini'><span style='width:71%'></span></div></td><td class='rate'>71,4%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z342779</span><small>CARLOS GOMES</small></td><td>6</td><td><div class='mini'><span style='width:83%'></span></div></td><td class='rate'>83,3%</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="modal" id="detalhe-nr35">
+  <a class="modal-backdrop" href="#topo" aria-label="Fechar"></a>
+  <div class="modal-card">
+    <div class="detail-head">
+      <div>
+        <h2>NR35</h2>
+        <p>Meta: 80,0% | Dentro: 14 | Fora: 9</p>
+      </div>
+      <a class="close-link" href="#topo">Fechar</a>
+    </div>
+    <div class="detail-grid">
+      <div>
+        <h3>Dentro da meta</h3>
+        <table><thead><tr><th>Tecnico</th><th>Base</th><th>Indice</th><th>%</th></tr></thead><tbody><tr class='ok-row'><td><span class='tech'>Z602984</span><small>PEDRO COSTA</small></td><td>17</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z412061</span><small>EDSON CARVALHO</small></td><td>2</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z502796</span><small>GILMAR SILVA</small></td><td>20</td><td><div class='mini'><span style='width:95%'></span></div></td><td class='rate'>95,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z593006</span><small>IVONALDO LIMA</small></td><td>21</td><td><div class='mini'><span style='width:90%'></span></div></td><td class='rate'>90,5%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z417376</span><small>JEFFERSON SILVA</small></td><td>20</td><td><div class='mini'><span style='width:90%'></span></div></td><td class='rate'>90,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z592082</span><small>SEBASTIAO COSTA</small></td><td>17</td><td><div class='mini'><span style='width:88%'></span></div></td><td class='rate'>88,2%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z602983</span><small>PEDRO GOMES</small></td><td>39</td><td><div class='mini'><span style='width:87%'></span></div></td><td class='rate'>87,2%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z495212</span><small>KAYO MACEDO</small></td><td>23</td><td><div class='mini'><span style='width:87%'></span></div></td><td class='rate'>87,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z615960</span><small>ALEXANDRE F</small></td><td>22</td><td><div class='mini'><span style='width:86%'></span></div></td><td class='rate'>86,4%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z597204</span><small>ADRYEL NASCIMENTO</small></td><td>21</td><td><div class='mini'><span style='width:86%'></span></div></td><td class='rate'>85,7%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z212955</span><small>FRANCISCO SILVA</small></td><td>20</td><td><div class='mini'><span style='width:85%'></span></div></td><td class='rate'>85,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z592144</span><small>ITALO NASCIMENTO</small></td><td>33</td><td><div class='mini'><span style='width:85%'></span></div></td><td class='rate'>84,8%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z419992</span><small>JULIO SOUSA</small></td><td>18</td><td><div class='mini'><span style='width:83%'></span></div></td><td class='rate'>83,3%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z627201</span><small>FELIPE SILVA</small></td><td>27</td><td><div class='mini'><span style='width:82%'></span></div></td><td class='rate'>81,5%</td></tr></tbody></table>
+      </div>
+      <div>
+        <h3>Fora da meta</h3>
+        <table><thead><tr><th>Tecnico</th><th>Base</th><th>Indice</th><th>%</th></tr></thead><tbody><tr class='bad-row'><td><span class='tech'>Z342779</span><small>CARLOS GOMES</small></td><td>18</td><td><div class='mini'><span style='width:56%'></span></div></td><td class='rate'>55,6%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z537229</span><small>PEDRO LIMA</small></td><td>34</td><td><div class='mini'><span style='width:59%'></span></div></td><td class='rate'>58,8%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z597205</span><small>JOAO MACEDO</small></td><td>36</td><td><div class='mini'><span style='width:61%'></span></div></td><td class='rate'>61,1%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z597203</span><small>JOSE LUZ</small></td><td>18</td><td><div class='mini'><span style='width:61%'></span></div></td><td class='rate'>61,1%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z537228</span><small>MARCOS SANTOS</small></td><td>28</td><td><div class='mini'><span style='width:68%'></span></div></td><td class='rate'>67,9%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z616340</span><small>JEFFERSON SILVA</small></td><td>20</td><td><div class='mini'><span style='width:70%'></span></div></td><td class='rate'>70,0%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z445950</span><small>MATEUS REIS</small></td><td>21</td><td><div class='mini'><span style='width:71%'></span></div></td><td class='rate'>71,4%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z585518</span><small>DAVID BARROS</small></td><td>19</td><td><div class='mini'><span style='width:74%'></span></div></td><td class='rate'>73,7%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z508829</span><small>RODRIGO MARQUES</small></td><td>12</td><td><div class='mini'><span style='width:75%'></span></div></td><td class='rate'>75,0%</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="modal" id="detalhe-geo">
+  <a class="modal-backdrop" href="#topo" aria-label="Fechar"></a>
+  <div class="modal-card">
+    <div class="detail-head">
+      <div>
+        <h2>Geolocalizacao</h2>
+        <p>Meta: 95,0% | Dentro: 14 | Fora: 9</p>
+      </div>
+      <a class="close-link" href="#topo">Fechar</a>
+    </div>
+    <div class="detail-grid">
+      <div>
+        <h3>Dentro da meta</h3>
+        <table><thead><tr><th>Tecnico</th><th>Base</th><th>Indice</th><th>%</th></tr></thead><tbody><tr class='ok-row'><td><span class='tech'>Z592144</span><small>ITALO NASCIMENTO</small></td><td>91</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z537229</span><small>PEDRO LIMA</small></td><td>99</td><td><div class='mini'><span style='width:98%'></span></div></td><td class='rate'>98,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z508829</span><small>RODRIGO MARQUES</small></td><td>93</td><td><div class='mini'><span style='width:98%'></span></div></td><td class='rate'>97,8%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z597204</span><small>ADRYEL NASCIMENTO</small></td><td>92</td><td><div class='mini'><span style='width:98%'></span></div></td><td class='rate'>97,8%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z502796</span><small>GILMAR SILVA</small></td><td>89</td><td><div class='mini'><span style='width:98%'></span></div></td><td class='rate'>97,8%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z419992</span><small>JULIO SOUSA</small></td><td>87</td><td><div class='mini'><span style='width:98%'></span></div></td><td class='rate'>97,7%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z627201</span><small>FELIPE SILVA</small></td><td>82</td><td><div class='mini'><span style='width:98%'></span></div></td><td class='rate'>97,6%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z592082</span><small>SEBASTIAO COSTA</small></td><td>82</td><td><div class='mini'><span style='width:98%'></span></div></td><td class='rate'>97,6%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z585518</span><small>DAVID BARROS</small></td><td>99</td><td><div class='mini'><span style='width:97%'></span></div></td><td class='rate'>97,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z602984</span><small>PEDRO COSTA</small></td><td>63</td><td><div class='mini'><span style='width:97%'></span></div></td><td class='rate'>96,8%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z593006</span><small>IVONALDO LIMA</small></td><td>61</td><td><div class='mini'><span style='width:97%'></span></div></td><td class='rate'>96,7%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z615960</span><small>ALEXANDRE F</small></td><td>75</td><td><div class='mini'><span style='width:96%'></span></div></td><td class='rate'>96,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z616340</span><small>JEFFERSON SILVA</small></td><td>75</td><td><div class='mini'><span style='width:96%'></span></div></td><td class='rate'>96,0%</td></tr>
+<tr class='ok-row'><td><span class='tech'>Z342779</span><small>CARLOS GOMES</small></td><td>87</td><td><div class='mini'><span style='width:95%'></span></div></td><td class='rate'>95,4%</td></tr></tbody></table>
+      </div>
+      <div>
+        <h3>Fora da meta</h3>
+        <table><thead><tr><th>Tecnico</th><th>Base</th><th>Indice</th><th>%</th></tr></thead><tbody><tr class='bad-row'><td><span class='tech'>Z597205</span><small>JOAO MACEDO</small></td><td>93</td><td><div class='mini'><span style='width:77%'></span></div></td><td class='rate'>77,4%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z537228</span><small>MARCOS SANTOS</small></td><td>96</td><td><div class='mini'><span style='width:91%'></span></div></td><td class='rate'>90,6%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z417376</span><small>JEFFERSON SILVA</small></td><td>96</td><td><div class='mini'><span style='width:92%'></span></div></td><td class='rate'>91,7%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z597203</span><small>JOSE LUZ</small></td><td>72</td><td><div class='mini'><span style='width:92%'></span></div></td><td class='rate'>91,7%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z495212</span><small>KAYO MACEDO</small></td><td>122</td><td><div class='mini'><span style='width:93%'></span></div></td><td class='rate'>93,4%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z445950</span><small>MATEUS REIS</small></td><td>113</td><td><div class='mini'><span style='width:94%'></span></div></td><td class='rate'>93,8%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z412061</span><small>EDSON CARVALHO</small></td><td>73</td><td><div class='mini'><span style='width:94%'></span></div></td><td class='rate'>94,5%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z212955</span><small>FRANCISCO SILVA</small></td><td>111</td><td><div class='mini'><span style='width:95%'></span></div></td><td class='rate'>94,6%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z602983</span><small>PEDRO GOMES</small></td><td>77</td><td><div class='mini'><span style='width:95%'></span></div></td><td class='rate'>94,8%</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="modal" id="detalhe-qq">
+  <a class="modal-backdrop" href="#topo" aria-label="Fechar"></a>
+  <div class="modal-card">
+    <div class="detail-head">
+      <div>
+        <h2>Quadra Qualificada</h2>
+        <p>Meta: 90,0% | Dentro: 0 | Fora: 23</p>
+      </div>
+      <a class="close-link" href="#topo">Fechar</a>
+    </div>
+    <div class="detail-grid">
+      <div>
+        <h3>Dentro da meta</h3>
+        <table><thead><tr><th>Tecnico</th><th>Base</th><th>Indice</th><th>%</th></tr></thead><tbody><tr><td colspan='4' class='empty'>Nenhum tecnico dentro da meta.</td></tr></tbody></table>
+      </div>
+      <div>
+        <h3>Fora da meta</h3>
+        <table><thead><tr><th>Tecnico</th><th>Base</th><th>Indice</th><th>%</th></tr></thead><tbody><tr class='bad-row'><td><span class='tech'>Z419992</span><small>JULIO SOUSA</small></td><td>201</td><td><div class='mini'><span style='width:64%'></span></div></td><td class='rate'>63,7%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z597204</span><small>ADRYEL NASCIMENTO</small></td><td>191</td><td><div class='mini'><span style='width:66%'></span></div></td><td class='rate'>66,5%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z615960</span><small>ALEXANDRE F</small></td><td>145</td><td><div class='mini'><span style='width:68%'></span></div></td><td class='rate'>68,3%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z592144</span><small>ITALO NASCIMENTO</small></td><td>191</td><td><div class='mini'><span style='width:71%'></span></div></td><td class='rate'>70,7%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z342779</span><small>CARLOS GOMES</small></td><td>172</td><td><div class='mini'><span style='width:72%'></span></div></td><td class='rate'>71,5%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z592082</span><small>SEBASTIAO COSTA</small></td><td>153</td><td><div class='mini'><span style='width:72%'></span></div></td><td class='rate'>71,9%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z597203</span><small>JOSE LUZ</small></td><td>155</td><td><div class='mini'><span style='width:73%'></span></div></td><td class='rate'>72,9%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z508829</span><small>RODRIGO MARQUES</small></td><td>189</td><td><div class='mini'><span style='width:73%'></span></div></td><td class='rate'>73,0%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z502796</span><small>GILMAR SILVA</small></td><td>173</td><td><div class='mini'><span style='width:73%'></span></div></td><td class='rate'>73,4%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z585518</span><small>DAVID BARROS</small></td><td>149</td><td><div class='mini'><span style='width:74%'></span></div></td><td class='rate'>73,8%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z212955</span><small>FRANCISCO SILVA</small></td><td>260</td><td><div class='mini'><span style='width:74%'></span></div></td><td class='rate'>74,2%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z537228</span><small>MARCOS SANTOS</small></td><td>198</td><td><div class='mini'><span style='width:75%'></span></div></td><td class='rate'>75,3%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z495212</span><small>KAYO MACEDO</small></td><td>238</td><td><div class='mini'><span style='width:76%'></span></div></td><td class='rate'>75,6%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z417376</span><small>JEFFERSON SILVA</small></td><td>196</td><td><div class='mini'><span style='width:76%'></span></div></td><td class='rate'>76,5%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z445950</span><small>MATEUS REIS</small></td><td>135</td><td><div class='mini'><span style='width:77%'></span></div></td><td class='rate'>77,0%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z627201</span><small>FELIPE SILVA</small></td><td>158</td><td><div class='mini'><span style='width:78%'></span></div></td><td class='rate'>78,5%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z616340</span><small>JEFFERSON SILVA</small></td><td>138</td><td><div class='mini'><span style='width:80%'></span></div></td><td class='rate'>79,7%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z602983</span><small>PEDRO GOMES</small></td><td>151</td><td><div class='mini'><span style='width:81%'></span></div></td><td class='rate'>80,8%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z597205</span><small>JOAO MACEDO</small></td><td>177</td><td><div class='mini'><span style='width:81%'></span></div></td><td class='rate'>81,4%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z593006</span><small>IVONALDO LIMA</small></td><td>111</td><td><div class='mini'><span style='width:82%'></span></div></td><td class='rate'>82,0%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z602984</span><small>PEDRO COSTA</small></td><td>131</td><td><div class='mini'><span style='width:82%'></span></div></td><td class='rate'>82,4%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z537229</span><small>PEDRO LIMA</small></td><td>194</td><td><div class='mini'><span style='width:84%'></span></div></td><td class='rate'>84,5%</td></tr>
+<tr class='bad-row'><td><span class='tech'>Z412061</span><small>EDSON CARVALHO</small></td><td>164</td><td><div class='mini'><span style='width:88%'></span></div></td><td class='rate'>87,8%</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+</section>
+      <section class="modal" id="tecnicos-avaliados">
+  <a class="modal-backdrop" href="#topo" aria-label="Fechar"></a>
+  <div class="modal-card compact-modal">
+    <div class="detail-head">
+      <div>
+        <h2>Tecnicos avaliados</h2>
+        <p>Total: 23</p>
+      </div>
+      <a class="close-link" href="#topo">Fechar</a>
+    </div>
+    <div class="tech-list"><a class='tech-list-item' href='#tech-Z597204'><span>ADRYEL NASCIMENTO</span><small>Z597204 | Base total 493</small></a>
+<a class='tech-list-item' href='#tech-Z615960'><span>ALEXANDRE F</span><small>Z615960 | Base total 392</small></a>
+<a class='tech-list-item' href='#tech-Z342779'><span>CARLOS GOMES</span><small>Z342779 | Base total 455</small></a>
+<a class='tech-list-item' href='#tech-Z585518'><span>DAVID BARROS</span><small>Z585518 | Base total 418</small></a>
+<a class='tech-list-item' href='#tech-Z412061'><span>EDSON CARVALHO</span><small>Z412061 | Base total 402</small></a>
+<a class='tech-list-item' href='#tech-Z627201'><span>FELIPE SILVA</span><small>Z627201 | Base total 425</small></a>
+<a class='tech-list-item' href='#tech-Z212955'><span>FRANCISCO SILVA</span><small>Z212955 | Base total 662</small></a>
+<a class='tech-list-item' href='#tech-Z502796'><span>GILMAR SILVA</span><small>Z502796 | Base total 449</small></a>
+<a class='tech-list-item' href='#tech-Z592144'><span>ITALO NASCIMENTO</span><small>Z592144 | Base total 512</small></a>
+<a class='tech-list-item' href='#tech-Z593006'><span>IVONALDO LIMA</span><small>Z593006 | Base total 308</small></a>
+<a class='tech-list-item' href='#tech-Z417376'><span>JEFFERSON SILVA</span><small>Z417376 | Base total 507</small></a>
+<a class='tech-list-item' href='#tech-Z616340'><span>JEFFERSON SILVA</span><small>Z616340 | Base total 371</small></a>
+<a class='tech-list-item' href='#tech-Z597205'><span>JOAO MACEDO</span><small>Z597205 | Base total 481</small></a>
+<a class='tech-list-item' href='#tech-Z597203'><span>JOSE LUZ</span><small>Z597203 | Base total 399</small></a>
+<a class='tech-list-item' href='#tech-Z419992'><span>JULIO SOUSA</span><small>Z419992 | Base total 492</small></a>
+<a class='tech-list-item' href='#tech-Z495212'><span>KAYO MACEDO</span><small>Z495212 | Base total 627</small></a>
+<a class='tech-list-item' href='#tech-Z537228'><span>MARCOS SANTOS</span><small>Z537228 | Base total 529</small></a>
+<a class='tech-list-item' href='#tech-Z445950'><span>MATEUS REIS</span><small>Z445950 | Base total 412</small></a>
+<a class='tech-list-item' href='#tech-Z602984'><span>PEDRO COSTA</span><small>Z602984 | Base total 352</small></a>
+<a class='tech-list-item' href='#tech-Z602983'><span>PEDRO GOMES</span><small>Z602983 | Base total 416</small></a>
+<a class='tech-list-item' href='#tech-Z537229'><span>PEDRO LIMA</span><small>Z537229 | Base total 518</small></a>
+<a class='tech-list-item' href='#tech-Z508829'><span>RODRIGO MARQUES</span><small>Z508829 | Base total 474</small></a>
+<a class='tech-list-item' href='#tech-Z592082'><span>SEBASTIAO COSTA</span><small>Z592082 | Base total 405</small></a></div>
+  </div>
+</section>
+      <section class="modal" id="tech-Z597204">
+  <a class="modal-backdrop" href="#tecnicos-avaliados" aria-label="Voltar"></a>
+  <div class="modal-card compact-modal">
+    <div class="detail-head">
+      <div>
+        <h2>ADRYEL NASCIMENTO</h2>
+        <p>Z597204 | Indicadores individuais</p>
+      </div>
+      <a class="close-link" href="#tecnicos-avaliados">Voltar</a>
+    </div>
+    <table><thead><tr><th>Indicador</th><th>Base</th><th>Indice</th><th>%</th><th>Status</th></tr></thead><tbody><tr class='ok-row'><td>TEC1</td><td>176</td><td><div class='mini'><span style='width:99%'></span></div></td><td class='rate'>98,9%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>TNPS</td><td>3</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>URA</td><td>10</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>NR35</td><td>21</td><td><div class='mini'><span style='width:86%'></span></div></td><td class='rate'>85,7%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>Geolocalizacao</td><td>92</td><td><div class='mini'><span style='width:98%'></span></div></td><td class='rate'>97,8%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>Quadra Qualificada</td><td>191</td><td><div class='mini'><span style='width:66%'></span></div></td><td class='rate'>66,5%</td><td>Fora</td></tr></tbody></table>
+  </div>
+</section>
+<section class="modal" id="tech-Z615960">
+  <a class="modal-backdrop" href="#tecnicos-avaliados" aria-label="Voltar"></a>
+  <div class="modal-card compact-modal">
+    <div class="detail-head">
+      <div>
+        <h2>ALEXANDRE F</h2>
+        <p>Z615960 | Indicadores individuais</p>
+      </div>
+      <a class="close-link" href="#tecnicos-avaliados">Voltar</a>
+    </div>
+    <table><thead><tr><th>Indicador</th><th>Base</th><th>Indice</th><th>%</th><th>Status</th></tr></thead><tbody><tr class='ok-row'><td>TEC1</td><td>139</td><td><div class='mini'><span style='width:96%'></span></div></td><td class='rate'>96,4%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>TNPS</td><td>4</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>URA</td><td>7</td><td><div class='mini'><span style='width:86%'></span></div></td><td class='rate'>85,7%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>NR35</td><td>22</td><td><div class='mini'><span style='width:86%'></span></div></td><td class='rate'>86,4%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>Geolocalizacao</td><td>75</td><td><div class='mini'><span style='width:96%'></span></div></td><td class='rate'>96,0%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>Quadra Qualificada</td><td>145</td><td><div class='mini'><span style='width:68%'></span></div></td><td class='rate'>68,3%</td><td>Fora</td></tr></tbody></table>
+  </div>
+</section>
+<section class="modal" id="tech-Z342779">
+  <a class="modal-backdrop" href="#tecnicos-avaliados" aria-label="Voltar"></a>
+  <div class="modal-card compact-modal">
+    <div class="detail-head">
+      <div>
+        <h2>CARLOS GOMES</h2>
+        <p>Z342779 | Indicadores individuais</p>
+      </div>
+      <a class="close-link" href="#tecnicos-avaliados">Voltar</a>
+    </div>
+    <table><thead><tr><th>Indicador</th><th>Base</th><th>Indice</th><th>%</th><th>Status</th></tr></thead><tbody><tr class='ok-row'><td>TEC1</td><td>171</td><td><div class='mini'><span style='width:98%'></span></div></td><td class='rate'>98,2%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>TNPS</td><td>1</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>URA</td><td>6</td><td><div class='mini'><span style='width:83%'></span></div></td><td class='rate'>83,3%</td><td>Fora</td></tr>
+<tr class='bad-row'><td>NR35</td><td>18</td><td><div class='mini'><span style='width:56%'></span></div></td><td class='rate'>55,6%</td><td>Fora</td></tr>
+<tr class='ok-row'><td>Geolocalizacao</td><td>87</td><td><div class='mini'><span style='width:95%'></span></div></td><td class='rate'>95,4%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>Quadra Qualificada</td><td>172</td><td><div class='mini'><span style='width:72%'></span></div></td><td class='rate'>71,5%</td><td>Fora</td></tr></tbody></table>
+  </div>
+</section>
+<section class="modal" id="tech-Z585518">
+  <a class="modal-backdrop" href="#tecnicos-avaliados" aria-label="Voltar"></a>
+  <div class="modal-card compact-modal">
+    <div class="detail-head">
+      <div>
+        <h2>DAVID BARROS</h2>
+        <p>Z585518 | Indicadores individuais</p>
+      </div>
+      <a class="close-link" href="#tecnicos-avaliados">Voltar</a>
+    </div>
+    <table><thead><tr><th>Indicador</th><th>Base</th><th>Indice</th><th>%</th><th>Status</th></tr></thead><tbody><tr class='bad-row'><td>TEC1</td><td>142</td><td><div class='mini'><span style='width:94%'></span></div></td><td class='rate'>94,4%</td><td>Fora</td></tr>
+<tr class='ok-row'><td>TNPS</td><td>3</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>URA</td><td>6</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>NR35</td><td>19</td><td><div class='mini'><span style='width:74%'></span></div></td><td class='rate'>73,7%</td><td>Fora</td></tr>
+<tr class='ok-row'><td>Geolocalizacao</td><td>99</td><td><div class='mini'><span style='width:97%'></span></div></td><td class='rate'>97,0%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>Quadra Qualificada</td><td>149</td><td><div class='mini'><span style='width:74%'></span></div></td><td class='rate'>73,8%</td><td>Fora</td></tr></tbody></table>
+  </div>
+</section>
+<section class="modal" id="tech-Z412061">
+  <a class="modal-backdrop" href="#tecnicos-avaliados" aria-label="Voltar"></a>
+  <div class="modal-card compact-modal">
+    <div class="detail-head">
+      <div>
+        <h2>EDSON CARVALHO</h2>
+        <p>Z412061 | Indicadores individuais</p>
+      </div>
+      <a class="close-link" href="#tecnicos-avaliados">Voltar</a>
+    </div>
+    <table><thead><tr><th>Indicador</th><th>Base</th><th>Indice</th><th>%</th><th>Status</th></tr></thead><tbody><tr class='ok-row'><td>TEC1</td><td>156</td><td><div class='mini'><span style='width:99%'></span></div></td><td class='rate'>99,4%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>TNPS</td><td>5</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>URA</td><td>2</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>NR35</td><td>2</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>Geolocalizacao</td><td>73</td><td><div class='mini'><span style='width:94%'></span></div></td><td class='rate'>94,5%</td><td>Fora</td></tr>
+<tr class='bad-row'><td>Quadra Qualificada</td><td>164</td><td><div class='mini'><span style='width:88%'></span></div></td><td class='rate'>87,8%</td><td>Fora</td></tr></tbody></table>
+  </div>
+</section>
+<section class="modal" id="tech-Z627201">
+  <a class="modal-backdrop" href="#tecnicos-avaliados" aria-label="Voltar"></a>
+  <div class="modal-card compact-modal">
+    <div class="detail-head">
+      <div>
+        <h2>FELIPE SILVA</h2>
+        <p>Z627201 | Indicadores individuais</p>
+      </div>
+      <a class="close-link" href="#tecnicos-avaliados">Voltar</a>
+    </div>
+    <table><thead><tr><th>Indicador</th><th>Base</th><th>Indice</th><th>%</th><th>Status</th></tr></thead><tbody><tr class='bad-row'><td>TEC1</td><td>155</td><td><div class='mini'><span style='width:93%'></span></div></td><td class='rate'>92,9%</td><td>Fora</td></tr>
+<tr class='ok-row'><td>TNPS</td><td>3</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr><td>URA</td><td colspan='4' class='empty'>Sem avaliacao</td></tr>
+<tr class='ok-row'><td>NR35</td><td>27</td><td><div class='mini'><span style='width:82%'></span></div></td><td class='rate'>81,5%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>Geolocalizacao</td><td>82</td><td><div class='mini'><span style='width:98%'></span></div></td><td class='rate'>97,6%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>Quadra Qualificada</td><td>158</td><td><div class='mini'><span style='width:78%'></span></div></td><td class='rate'>78,5%</td><td>Fora</td></tr></tbody></table>
+  </div>
+</section>
+<section class="modal" id="tech-Z212955">
+  <a class="modal-backdrop" href="#tecnicos-avaliados" aria-label="Voltar"></a>
+  <div class="modal-card compact-modal">
+    <div class="detail-head">
+      <div>
+        <h2>FRANCISCO SILVA</h2>
+        <p>Z212955 | Indicadores individuais</p>
+      </div>
+      <a class="close-link" href="#tecnicos-avaliados">Voltar</a>
+    </div>
+    <table><thead><tr><th>Indicador</th><th>Base</th><th>Indice</th><th>%</th><th>Status</th></tr></thead><tbody><tr class='ok-row'><td>TEC1</td><td>235</td><td><div class='mini'><span style='width:95%'></span></div></td><td class='rate'>95,3%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>TNPS</td><td>28</td><td><div class='mini'><span style='width:96%'></span></div></td><td class='rate'>96,4%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>URA</td><td>8</td><td><div class='mini'><span style='width:88%'></span></div></td><td class='rate'>87,5%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>NR35</td><td>20</td><td><div class='mini'><span style='width:85%'></span></div></td><td class='rate'>85,0%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>Geolocalizacao</td><td>111</td><td><div class='mini'><span style='width:95%'></span></div></td><td class='rate'>94,6%</td><td>Fora</td></tr>
+<tr class='bad-row'><td>Quadra Qualificada</td><td>260</td><td><div class='mini'><span style='width:74%'></span></div></td><td class='rate'>74,2%</td><td>Fora</td></tr></tbody></table>
+  </div>
+</section>
+<section class="modal" id="tech-Z502796">
+  <a class="modal-backdrop" href="#tecnicos-avaliados" aria-label="Voltar"></a>
+  <div class="modal-card compact-modal">
+    <div class="detail-head">
+      <div>
+        <h2>GILMAR SILVA</h2>
+        <p>Z502796 | Indicadores individuais</p>
+      </div>
+      <a class="close-link" href="#tecnicos-avaliados">Voltar</a>
+    </div>
+    <table><thead><tr><th>Indicador</th><th>Base</th><th>Indice</th><th>%</th><th>Status</th></tr></thead><tbody><tr class='bad-row'><td>TEC1</td><td>159</td><td><div class='mini'><span style='width:92%'></span></div></td><td class='rate'>91,8%</td><td>Fora</td></tr>
+<tr class='ok-row'><td>TNPS</td><td>1</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>URA</td><td>7</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>NR35</td><td>20</td><td><div class='mini'><span style='width:95%'></span></div></td><td class='rate'>95,0%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>Geolocalizacao</td><td>89</td><td><div class='mini'><span style='width:98%'></span></div></td><td class='rate'>97,8%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>Quadra Qualificada</td><td>173</td><td><div class='mini'><span style='width:73%'></span></div></td><td class='rate'>73,4%</td><td>Fora</td></tr></tbody></table>
+  </div>
+</section>
+<section class="modal" id="tech-Z592144">
+  <a class="modal-backdrop" href="#tecnicos-avaliados" aria-label="Voltar"></a>
+  <div class="modal-card compact-modal">
+    <div class="detail-head">
+      <div>
+        <h2>ITALO NASCIMENTO</h2>
+        <p>Z592144 | Indicadores individuais</p>
+      </div>
+      <a class="close-link" href="#tecnicos-avaliados">Voltar</a>
+    </div>
+    <table><thead><tr><th>Indicador</th><th>Base</th><th>Indice</th><th>%</th><th>Status</th></tr></thead><tbody><tr class='bad-row'><td>TEC1</td><td>188</td><td><div class='mini'><span style='width:95%'></span></div></td><td class='rate'>94,7%</td><td>Fora</td></tr>
+<tr class='ok-row'><td>TNPS</td><td>1</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>URA</td><td>8</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>NR35</td><td>33</td><td><div class='mini'><span style='width:85%'></span></div></td><td class='rate'>84,8%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>Geolocalizacao</td><td>91</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>Quadra Qualificada</td><td>191</td><td><div class='mini'><span style='width:71%'></span></div></td><td class='rate'>70,7%</td><td>Fora</td></tr></tbody></table>
+  </div>
+</section>
+<section class="modal" id="tech-Z593006">
+  <a class="modal-backdrop" href="#tecnicos-avaliados" aria-label="Voltar"></a>
+  <div class="modal-card compact-modal">
+    <div class="detail-head">
+      <div>
+        <h2>IVONALDO LIMA</h2>
+        <p>Z593006 | Indicadores individuais</p>
+      </div>
+      <a class="close-link" href="#tecnicos-avaliados">Voltar</a>
+    </div>
+    <table><thead><tr><th>Indicador</th><th>Base</th><th>Indice</th><th>%</th><th>Status</th></tr></thead><tbody><tr class='bad-row'><td>TEC1</td><td>110</td><td><div class='mini'><span style='width:90%'></span></div></td><td class='rate'>90,0%</td><td>Fora</td></tr>
+<tr class='ok-row'><td>TNPS</td><td>2</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>URA</td><td>3</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>NR35</td><td>21</td><td><div class='mini'><span style='width:90%'></span></div></td><td class='rate'>90,5%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>Geolocalizacao</td><td>61</td><td><div class='mini'><span style='width:97%'></span></div></td><td class='rate'>96,7%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>Quadra Qualificada</td><td>111</td><td><div class='mini'><span style='width:82%'></span></div></td><td class='rate'>82,0%</td><td>Fora</td></tr></tbody></table>
+  </div>
+</section>
+<section class="modal" id="tech-Z417376">
+  <a class="modal-backdrop" href="#tecnicos-avaliados" aria-label="Voltar"></a>
+  <div class="modal-card compact-modal">
+    <div class="detail-head">
+      <div>
+        <h2>JEFFERSON SILVA</h2>
+        <p>Z417376 | Indicadores individuais</p>
+      </div>
+      <a class="close-link" href="#tecnicos-avaliados">Voltar</a>
+    </div>
+    <table><thead><tr><th>Indicador</th><th>Base</th><th>Indice</th><th>%</th><th>Status</th></tr></thead><tbody><tr class='bad-row'><td>TEC1</td><td>187</td><td><div class='mini'><span style='width:92%'></span></div></td><td class='rate'>92,5%</td><td>Fora</td></tr>
+<tr class='ok-row'><td>TNPS</td><td>1</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>URA</td><td>7</td><td><div class='mini'><span style='width:71%'></span></div></td><td class='rate'>71,4%</td><td>Fora</td></tr>
+<tr class='ok-row'><td>NR35</td><td>20</td><td><div class='mini'><span style='width:90%'></span></div></td><td class='rate'>90,0%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>Geolocalizacao</td><td>96</td><td><div class='mini'><span style='width:92%'></span></div></td><td class='rate'>91,7%</td><td>Fora</td></tr>
+<tr class='bad-row'><td>Quadra Qualificada</td><td>196</td><td><div class='mini'><span style='width:76%'></span></div></td><td class='rate'>76,5%</td><td>Fora</td></tr></tbody></table>
+  </div>
+</section>
+<section class="modal" id="tech-Z616340">
+  <a class="modal-backdrop" href="#tecnicos-avaliados" aria-label="Voltar"></a>
+  <div class="modal-card compact-modal">
+    <div class="detail-head">
+      <div>
+        <h2>JEFFERSON SILVA</h2>
+        <p>Z616340 | Indicadores individuais</p>
+      </div>
+      <a class="close-link" href="#tecnicos-avaliados">Voltar</a>
+    </div>
+    <table><thead><tr><th>Indicador</th><th>Base</th><th>Indice</th><th>%</th><th>Status</th></tr></thead><tbody><tr class='ok-row'><td>TEC1</td><td>135</td><td><div class='mini'><span style='width:96%'></span></div></td><td class='rate'>95,6%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>TNPS</td><td>3</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr><td>URA</td><td colspan='4' class='empty'>Sem avaliacao</td></tr>
+<tr class='bad-row'><td>NR35</td><td>20</td><td><div class='mini'><span style='width:70%'></span></div></td><td class='rate'>70,0%</td><td>Fora</td></tr>
+<tr class='ok-row'><td>Geolocalizacao</td><td>75</td><td><div class='mini'><span style='width:96%'></span></div></td><td class='rate'>96,0%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>Quadra Qualificada</td><td>138</td><td><div class='mini'><span style='width:80%'></span></div></td><td class='rate'>79,7%</td><td>Fora</td></tr></tbody></table>
+  </div>
+</section>
+<section class="modal" id="tech-Z597205">
+  <a class="modal-backdrop" href="#tecnicos-avaliados" aria-label="Voltar"></a>
+  <div class="modal-card compact-modal">
+    <div class="detail-head">
+      <div>
+        <h2>JOAO MACEDO</h2>
+        <p>Z597205 | Indicadores individuais</p>
+      </div>
+      <a class="close-link" href="#tecnicos-avaliados">Voltar</a>
+    </div>
+    <table><thead><tr><th>Indicador</th><th>Base</th><th>Indice</th><th>%</th><th>Status</th></tr></thead><tbody><tr class='ok-row'><td>TEC1</td><td>169</td><td><div class='mini'><span style='width:97%'></span></div></td><td class='rate'>97,0%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>TNPS</td><td>2</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>URA</td><td>4</td><td><div class='mini'><span style='width:50%'></span></div></td><td class='rate'>50,0%</td><td>Fora</td></tr>
+<tr class='bad-row'><td>NR35</td><td>36</td><td><div class='mini'><span style='width:61%'></span></div></td><td class='rate'>61,1%</td><td>Fora</td></tr>
+<tr class='bad-row'><td>Geolocalizacao</td><td>93</td><td><div class='mini'><span style='width:77%'></span></div></td><td class='rate'>77,4%</td><td>Fora</td></tr>
+<tr class='bad-row'><td>Quadra Qualificada</td><td>177</td><td><div class='mini'><span style='width:81%'></span></div></td><td class='rate'>81,4%</td><td>Fora</td></tr></tbody></table>
+  </div>
+</section>
+<section class="modal" id="tech-Z597203">
+  <a class="modal-backdrop" href="#tecnicos-avaliados" aria-label="Voltar"></a>
+  <div class="modal-card compact-modal">
+    <div class="detail-head">
+      <div>
+        <h2>JOSE LUZ</h2>
+        <p>Z597203 | Indicadores individuais</p>
+      </div>
+      <a class="close-link" href="#tecnicos-avaliados">Voltar</a>
+    </div>
+    <table><thead><tr><th>Indicador</th><th>Base</th><th>Indice</th><th>%</th><th>Status</th></tr></thead><tbody><tr class='bad-row'><td>TEC1</td><td>144</td><td><div class='mini'><span style='width:94%'></span></div></td><td class='rate'>94,4%</td><td>Fora</td></tr>
+<tr class='bad-row'><td>TNPS</td><td>2</td><td><div class='mini'><span style='width:50%'></span></div></td><td class='rate'>50,0%</td><td>Fora</td></tr>
+<tr class='ok-row'><td>URA</td><td>8</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>NR35</td><td>18</td><td><div class='mini'><span style='width:61%'></span></div></td><td class='rate'>61,1%</td><td>Fora</td></tr>
+<tr class='bad-row'><td>Geolocalizacao</td><td>72</td><td><div class='mini'><span style='width:92%'></span></div></td><td class='rate'>91,7%</td><td>Fora</td></tr>
+<tr class='bad-row'><td>Quadra Qualificada</td><td>155</td><td><div class='mini'><span style='width:73%'></span></div></td><td class='rate'>72,9%</td><td>Fora</td></tr></tbody></table>
+  </div>
+</section>
+<section class="modal" id="tech-Z419992">
+  <a class="modal-backdrop" href="#tecnicos-avaliados" aria-label="Voltar"></a>
+  <div class="modal-card compact-modal">
+    <div class="detail-head">
+      <div>
+        <h2>JULIO SOUSA</h2>
+        <p>Z419992 | Indicadores individuais</p>
+      </div>
+      <a class="close-link" href="#tecnicos-avaliados">Voltar</a>
+    </div>
+    <table><thead><tr><th>Indicador</th><th>Base</th><th>Indice</th><th>%</th><th>Status</th></tr></thead><tbody><tr class='bad-row'><td>TEC1</td><td>175</td><td><div class='mini'><span style='width:90%'></span></div></td><td class='rate'>89,7%</td><td>Fora</td></tr>
+<tr class='ok-row'><td>TNPS</td><td>4</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>URA</td><td>7</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>NR35</td><td>18</td><td><div class='mini'><span style='width:83%'></span></div></td><td class='rate'>83,3%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>Geolocalizacao</td><td>87</td><td><div class='mini'><span style='width:98%'></span></div></td><td class='rate'>97,7%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>Quadra Qualificada</td><td>201</td><td><div class='mini'><span style='width:64%'></span></div></td><td class='rate'>63,7%</td><td>Fora</td></tr></tbody></table>
+  </div>
+</section>
+<section class="modal" id="tech-Z495212">
+  <a class="modal-backdrop" href="#tecnicos-avaliados" aria-label="Voltar"></a>
+  <div class="modal-card compact-modal">
+    <div class="detail-head">
+      <div>
+        <h2>KAYO MACEDO</h2>
+        <p>Z495212 | Indicadores individuais</p>
+      </div>
+      <a class="close-link" href="#tecnicos-avaliados">Voltar</a>
+    </div>
+    <table><thead><tr><th>Indicador</th><th>Base</th><th>Indice</th><th>%</th><th>Status</th></tr></thead><tbody><tr class='ok-row'><td>TEC1</td><td>228</td><td><div class='mini'><span style='width:96%'></span></div></td><td class='rate'>96,5%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>TNPS</td><td>3</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>URA</td><td>13</td><td><div class='mini'><span style='width:92%'></span></div></td><td class='rate'>92,3%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>NR35</td><td>23</td><td><div class='mini'><span style='width:87%'></span></div></td><td class='rate'>87,0%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>Geolocalizacao</td><td>122</td><td><div class='mini'><span style='width:93%'></span></div></td><td class='rate'>93,4%</td><td>Fora</td></tr>
+<tr class='bad-row'><td>Quadra Qualificada</td><td>238</td><td><div class='mini'><span style='width:76%'></span></div></td><td class='rate'>75,6%</td><td>Fora</td></tr></tbody></table>
+  </div>
+</section>
+<section class="modal" id="tech-Z537228">
+  <a class="modal-backdrop" href="#tecnicos-avaliados" aria-label="Voltar"></a>
+  <div class="modal-card compact-modal">
+    <div class="detail-head">
+      <div>
+        <h2>MARCOS SANTOS</h2>
+        <p>Z537228 | Indicadores individuais</p>
+      </div>
+      <a class="close-link" href="#tecnicos-avaliados">Voltar</a>
+    </div>
+    <table><thead><tr><th>Indicador</th><th>Base</th><th>Indice</th><th>%</th><th>Status</th></tr></thead><tbody><tr class='bad-row'><td>TEC1</td><td>190</td><td><div class='mini'><span style='width:95%'></span></div></td><td class='rate'>94,7%</td><td>Fora</td></tr>
+<tr class='ok-row'><td>TNPS</td><td>4</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>URA</td><td>13</td><td><div class='mini'><span style='width:69%'></span></div></td><td class='rate'>69,2%</td><td>Fora</td></tr>
+<tr class='bad-row'><td>NR35</td><td>28</td><td><div class='mini'><span style='width:68%'></span></div></td><td class='rate'>67,9%</td><td>Fora</td></tr>
+<tr class='bad-row'><td>Geolocalizacao</td><td>96</td><td><div class='mini'><span style='width:91%'></span></div></td><td class='rate'>90,6%</td><td>Fora</td></tr>
+<tr class='bad-row'><td>Quadra Qualificada</td><td>198</td><td><div class='mini'><span style='width:75%'></span></div></td><td class='rate'>75,3%</td><td>Fora</td></tr></tbody></table>
+  </div>
+</section>
+<section class="modal" id="tech-Z445950">
+  <a class="modal-backdrop" href="#tecnicos-avaliados" aria-label="Voltar"></a>
+  <div class="modal-card compact-modal">
+    <div class="detail-head">
+      <div>
+        <h2>MATEUS REIS</h2>
+        <p>Z445950 | Indicadores individuais</p>
+      </div>
+      <a class="close-link" href="#tecnicos-avaliados">Voltar</a>
+    </div>
+    <table><thead><tr><th>Indicador</th><th>Base</th><th>Indice</th><th>%</th><th>Status</th></tr></thead><tbody><tr class='ok-row'><td>TEC1</td><td>133</td><td><div class='mini'><span style='width:98%'></span></div></td><td class='rate'>98,5%</td><td>Dentro</td></tr>
+<tr><td>TNPS</td><td colspan='4' class='empty'>Sem avaliacao</td></tr>
+<tr class='bad-row'><td>URA</td><td>10</td><td><div class='mini'><span style='width:70%'></span></div></td><td class='rate'>70,0%</td><td>Fora</td></tr>
+<tr class='bad-row'><td>NR35</td><td>21</td><td><div class='mini'><span style='width:71%'></span></div></td><td class='rate'>71,4%</td><td>Fora</td></tr>
+<tr class='bad-row'><td>Geolocalizacao</td><td>113</td><td><div class='mini'><span style='width:94%'></span></div></td><td class='rate'>93,8%</td><td>Fora</td></tr>
+<tr class='bad-row'><td>Quadra Qualificada</td><td>135</td><td><div class='mini'><span style='width:77%'></span></div></td><td class='rate'>77,0%</td><td>Fora</td></tr></tbody></table>
+  </div>
+</section>
+<section class="modal" id="tech-Z602984">
+  <a class="modal-backdrop" href="#tecnicos-avaliados" aria-label="Voltar"></a>
+  <div class="modal-card compact-modal">
+    <div class="detail-head">
+      <div>
+        <h2>PEDRO COSTA</h2>
+        <p>Z602984 | Indicadores individuais</p>
+      </div>
+      <a class="close-link" href="#tecnicos-avaliados">Voltar</a>
+    </div>
+    <table><thead><tr><th>Indicador</th><th>Base</th><th>Indice</th><th>%</th><th>Status</th></tr></thead><tbody><tr class='bad-row'><td>TEC1</td><td>134</td><td><div class='mini'><span style='width:95%'></span></div></td><td class='rate'>94,8%</td><td>Fora</td></tr>
+<tr class='ok-row'><td>TNPS</td><td>3</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>URA</td><td>4</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>NR35</td><td>17</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>Geolocalizacao</td><td>63</td><td><div class='mini'><span style='width:97%'></span></div></td><td class='rate'>96,8%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>Quadra Qualificada</td><td>131</td><td><div class='mini'><span style='width:82%'></span></div></td><td class='rate'>82,4%</td><td>Fora</td></tr></tbody></table>
+  </div>
+</section>
+<section class="modal" id="tech-Z602983">
+  <a class="modal-backdrop" href="#tecnicos-avaliados" aria-label="Voltar"></a>
+  <div class="modal-card compact-modal">
+    <div class="detail-head">
+      <div>
+        <h2>PEDRO GOMES</h2>
+        <p>Z602983 | Indicadores individuais</p>
+      </div>
+      <a class="close-link" href="#tecnicos-avaliados">Voltar</a>
+    </div>
+    <table><thead><tr><th>Indicador</th><th>Base</th><th>Indice</th><th>%</th><th>Status</th></tr></thead><tbody><tr class='ok-row'><td>TEC1</td><td>138</td><td><div class='mini'><span style='width:97%'></span></div></td><td class='rate'>97,1%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>TNPS</td><td>4</td><td><div class='mini'><span style='width:50%'></span></div></td><td class='rate'>50,0%</td><td>Fora</td></tr>
+<tr class='ok-row'><td>URA</td><td>7</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>NR35</td><td>39</td><td><div class='mini'><span style='width:87%'></span></div></td><td class='rate'>87,2%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>Geolocalizacao</td><td>77</td><td><div class='mini'><span style='width:95%'></span></div></td><td class='rate'>94,8%</td><td>Fora</td></tr>
+<tr class='bad-row'><td>Quadra Qualificada</td><td>151</td><td><div class='mini'><span style='width:81%'></span></div></td><td class='rate'>80,8%</td><td>Fora</td></tr></tbody></table>
+  </div>
+</section>
+<section class="modal" id="tech-Z537229">
+  <a class="modal-backdrop" href="#tecnicos-avaliados" aria-label="Voltar"></a>
+  <div class="modal-card compact-modal">
+    <div class="detail-head">
+      <div>
+        <h2>PEDRO LIMA</h2>
+        <p>Z537229 | Indicadores individuais</p>
+      </div>
+      <a class="close-link" href="#tecnicos-avaliados">Voltar</a>
+    </div>
+    <table><thead><tr><th>Indicador</th><th>Base</th><th>Indice</th><th>%</th><th>Status</th></tr></thead><tbody><tr class='bad-row'><td>TEC1</td><td>187</td><td><div class='mini'><span style='width:92%'></span></div></td><td class='rate'>92,5%</td><td>Fora</td></tr>
+<tr><td>TNPS</td><td colspan='4' class='empty'>Sem avaliacao</td></tr>
+<tr class='ok-row'><td>URA</td><td>4</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>NR35</td><td>34</td><td><div class='mini'><span style='width:59%'></span></div></td><td class='rate'>58,8%</td><td>Fora</td></tr>
+<tr class='ok-row'><td>Geolocalizacao</td><td>99</td><td><div class='mini'><span style='width:98%'></span></div></td><td class='rate'>98,0%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>Quadra Qualificada</td><td>194</td><td><div class='mini'><span style='width:84%'></span></div></td><td class='rate'>84,5%</td><td>Fora</td></tr></tbody></table>
+  </div>
+</section>
+<section class="modal" id="tech-Z508829">
+  <a class="modal-backdrop" href="#tecnicos-avaliados" aria-label="Voltar"></a>
+  <div class="modal-card compact-modal">
+    <div class="detail-head">
+      <div>
+        <h2>RODRIGO MARQUES</h2>
+        <p>Z508829 | Indicadores individuais</p>
+      </div>
+      <a class="close-link" href="#tecnicos-avaliados">Voltar</a>
+    </div>
+    <table><thead><tr><th>Indicador</th><th>Base</th><th>Indice</th><th>%</th><th>Status</th></tr></thead><tbody><tr class='bad-row'><td>TEC1</td><td>173</td><td><div class='mini'><span style='width:91%'></span></div></td><td class='rate'>90,8%</td><td>Fora</td></tr>
+<tr><td>TNPS</td><td colspan='4' class='empty'>Sem avaliacao</td></tr>
+<tr class='ok-row'><td>URA</td><td>7</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>NR35</td><td>12</td><td><div class='mini'><span style='width:75%'></span></div></td><td class='rate'>75,0%</td><td>Fora</td></tr>
+<tr class='ok-row'><td>Geolocalizacao</td><td>93</td><td><div class='mini'><span style='width:98%'></span></div></td><td class='rate'>97,8%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>Quadra Qualificada</td><td>189</td><td><div class='mini'><span style='width:73%'></span></div></td><td class='rate'>73,0%</td><td>Fora</td></tr></tbody></table>
+  </div>
+</section>
+<section class="modal" id="tech-Z592082">
+  <a class="modal-backdrop" href="#tecnicos-avaliados" aria-label="Voltar"></a>
+  <div class="modal-card compact-modal">
+    <div class="detail-head">
+      <div>
+        <h2>SEBASTIAO COSTA</h2>
+        <p>Z592082 | Indicadores individuais</p>
+      </div>
+      <a class="close-link" href="#tecnicos-avaliados">Voltar</a>
+    </div>
+    <table><thead><tr><th>Indicador</th><th>Base</th><th>Indice</th><th>%</th><th>Status</th></tr></thead><tbody><tr class='ok-row'><td>TEC1</td><td>142</td><td><div class='mini'><span style='width:99%'></span></div></td><td class='rate'>98,6%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>TNPS</td><td>4</td><td><div class='mini'><span style='width:100%'></span></div></td><td class='rate'>100,0%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>URA</td><td>7</td><td><div class='mini'><span style='width:71%'></span></div></td><td class='rate'>71,4%</td><td>Fora</td></tr>
+<tr class='ok-row'><td>NR35</td><td>17</td><td><div class='mini'><span style='width:88%'></span></div></td><td class='rate'>88,2%</td><td>Dentro</td></tr>
+<tr class='ok-row'><td>Geolocalizacao</td><td>82</td><td><div class='mini'><span style='width:98%'></span></div></td><td class='rate'>97,6%</td><td>Dentro</td></tr>
+<tr class='bad-row'><td>Quadra Qualificada</td><td>153</td><td><div class='mini'><span style='width:72%'></span></div></td><td class='rate'>71,9%</td><td>Fora</td></tr></tbody></table>
+  </div>
+</section>
+    </section>
+  </main>
+  <script>
+    const targets = [
+      { id: 'detalhe-tec1', name: 'TEC1', target: 0.95 },
+      { id: 'detalhe-tnps', name: 'TNPS', target: 0.95 },
+      { id: 'detalhe-ura', name: 'URA', target: 0.85 },
+      { id: 'detalhe-nr35', name: 'NR35', target: 0.80 },
+      { id: 'detalhe-geo', name: 'Geolocalizacao', target: 0.95 },
+      { id: 'detalhe-qq', name: 'Quadra Qualificada', target: 0.90 }
+    ];
+
+    const enc = new TextDecoder();
+    const statusEl = document.getElementById('importStatus');
+    const inputEl = document.getElementById('xlsxInput');
+    const loadBaseButton = document.getElementById('loadBaseButton');
+    const clearBaseButton = document.getElementById('clearBaseButton');
+    const kpisEl = document.querySelector('.kpis');
+    const detailsEl = document.querySelector('.details');
+    const actionsEl = document.querySelector('.dashboard-actions');
+    const initialState = {
+      kpis: kpisEl.innerHTML,
+      details: detailsEl.innerHTML,
+      actions: actionsEl.innerHTML
+    };
+    let selectedFile = null;
+
+    function html(value) {
+      return String(value ?? '').replace(/[&<>"']/g, function(ch) {
+        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch];
+      });
+    }
+    function normalize(value) {
+      return String(value ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    }
+    function isTargetUnit(value) {
+      return normalize(value) === 'TSALUMAR';
+    }
+    function toNumber(value) {
+      if (value === null || value === undefined || value === '') return null;
+      const n = Number(String(value).replace('%', '').replace(',', '.'));
+      return Number.isFinite(n) ? n : null;
+    }
+    function fmtPercent(value) {
+      if (value === null || value === undefined || Number.isNaN(value)) return '-';
+      let n = Number(value);
+      if (n <= 1) n = n * 100;
+      return n.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
+    }
+    function fmtInt(value) {
+      return Math.round(Number(value || 0)).toLocaleString('pt-BR');
+    }
+    function colIndexFromRef(ref) {
+      const match = String(ref || '').match(/[A-Z]+/);
+      if (!match) return 0;
+      let n = 0;
+      for (const ch of match[0]) n = n * 26 + ch.charCodeAt(0) - 64;
+      return n - 1;
+    }
+    function rowIndexFromRef(ref) {
+      const match = String(ref || '').match(/[0-9]+/);
+      return match ? Number(match[0]) : 0;
+    }
+    function findCol(headers, names) {
+      for (const name of names) {
+        const key = String(name).toLowerCase();
+        if (headers.has(key)) return headers.get(key);
+      }
+      return null;
+    }
+    function getHeaders(sheet) {
+      const row = sheet.rows.get(1) || [];
+      const headers = new Map();
+      row.forEach((value, idx) => {
+        if (value !== undefined && value !== null && String(value).trim() !== '') {
+          headers.set(String(value).trim().toLowerCase(), idx);
+        }
+      });
+      return headers;
+    }
+    function getCell(row, col) {
+      if (!row || col === null || col === undefined) return '';
+      return row[col] ?? '';
+    }
+
+    async function inflateRaw(bytes) {
+      const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+      return new Uint8Array(await new Response(stream).arrayBuffer());
+    }
+    async function readZip(arrayBuffer) {
+      const data = new Uint8Array(arrayBuffer);
+      const view = new DataView(arrayBuffer);
+      let eocd = -1;
+      for (let i = data.length - 22; i >= Math.max(0, data.length - 66000); i--) {
+        if (view.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+      }
+      if (eocd < 0) throw new Error('Arquivo XLSX invalido.');
+      const entriesCount = view.getUint16(eocd + 10, true);
+      const centralOffset = view.getUint32(eocd + 16, true);
+      const entries = new Map();
+      let ptr = centralOffset;
+      for (let i = 0; i < entriesCount; i++) {
+        if (view.getUint32(ptr, true) !== 0x02014b50) break;
+        const method = view.getUint16(ptr + 10, true);
+        const compressedSize = view.getUint32(ptr + 20, true);
+        const fileNameLength = view.getUint16(ptr + 28, true);
+        const extraLength = view.getUint16(ptr + 30, true);
+        const commentLength = view.getUint16(ptr + 32, true);
+        const localOffset = view.getUint32(ptr + 42, true);
+        const name = enc.decode(data.slice(ptr + 46, ptr + 46 + fileNameLength));
+        entries.set(name, { method, compressedSize, localOffset });
+        ptr += 46 + fileNameLength + extraLength + commentLength;
+      }
+      async function readText(name) {
+        const entry = entries.get(name);
+        if (!entry) return '';
+        const local = entry.localOffset;
+        const nameLength = view.getUint16(local + 26, true);
+        const extraLength = view.getUint16(local + 28, true);
+        const start = local + 30 + nameLength + extraLength;
+        const compressed = data.slice(start, start + entry.compressedSize);
+        const bytes = entry.method === 0 ? compressed : await inflateRaw(compressed);
+        return enc.decode(bytes);
+      }
+      return { readText };
+    }
+    function xmlDoc(text) {
+      return new DOMParser().parseFromString(text, 'application/xml');
+    }
+    async function loadWorkbook(file) {
+      const zip = await readZip(await file.arrayBuffer());
+      const sharedText = await zip.readText('xl/sharedStrings.xml');
+      const shared = [];
+      if (sharedText) {
+        for (const si of xmlDoc(sharedText).getElementsByTagName('si')) shared.push(si.textContent || '');
+      }
+      const wb = xmlDoc(await zip.readText('xl/workbook.xml'));
+      const rels = xmlDoc(await zip.readText('xl/_rels/workbook.xml.rels'));
+      const relMap = new Map();
+      for (const rel of rels.getElementsByTagName('Relationship')) {
+        relMap.set(rel.getAttribute('Id'), rel.getAttribute('Target'));
+      }
+      const sheets = {};
+      for (const sheetNode of wb.getElementsByTagName('sheet')) {
+        const name = sheetNode.getAttribute('name');
+        const rid = sheetNode.getAttribute('r:id') || sheetNode.getAttribute('id');
+        let target = relMap.get(rid);
+        if (!target) continue;
+        if (!target.startsWith('xl/')) target = 'xl/' + target.replace(/^\/?xl\//, '');
+        sheets[name] = parseSheet(await zip.readText(target), shared);
+      }
+      return sheets;
+    }
+    function parseSheet(text, shared) {
+      const doc = xmlDoc(text);
+      const rows = new Map();
+      for (const rowNode of doc.getElementsByTagName('row')) {
+        const rowNumber = Number(rowNode.getAttribute('r')) || 0;
+        const row = [];
+        for (const c of rowNode.getElementsByTagName('c')) {
+          const col = colIndexFromRef(c.getAttribute('r'));
+          const type = c.getAttribute('t');
+          let value = '';
+          const v = c.getElementsByTagName('v')[0];
+          if (type === 's' && v) value = shared[Number(v.textContent)] || '';
+          else if (type === 'inlineStr') value = c.textContent || '';
+          else value = v ? v.textContent : '';
+          row[col] = value;
+        }
+        rows.set(rowNumber, row);
+      }
+      return { rows };
+    }
+
+    function buildTechSet(sheets) {
+      const sources = [
+        ['tec1', ['dsc_un_negocio_wfm'], ['cod_tecnico_wfm', 'cod_login_baixa_os', 'tec1']],
+        ['tc', ['unidade_negocio'], ['login_tecnico']],
+        ['sla', ['nm_unidade_negocio_tecnico'], ['cd_login_tecnico']],
+        ['qq', ['un'], ['login_tec']],
+        ['ura', ['nm_unidade_negocio_tecnico'], ['cd_login_tecnico']],
+        ['efic', ['un'], ['login_tec']],
+        ['nr35', ['un'], ['login']],
+        ['geo_os', ['un'], ['login_tec']]
+      ];
+      const set = new Set();
+      for (const src of sources) {
+        const sheet = sheets[src[0]];
+        if (!sheet) continue;
+        const headers = getHeaders(sheet);
+        const unitCol = findCol(headers, src[1]);
+        const techCol = findCol(headers, src[2]);
+        if (unitCol === null || techCol === null) continue;
+        for (const row of sheet.rows.values()) {
+          if (isTargetUnit(getCell(row, unitCol))) {
+            const code = normalize(getCell(row, techCol));
+            if (code) set.add(code);
+          }
+        }
+      }
+      return set;
+    }
+    function parseEdited(sheets, sheetName, startRow, label, allowed) {
+      const sheet = sheets[sheetName];
+      if (!sheet) return [];
+      const out = [];
+      const rowNumbers = Array.from(sheet.rows.keys()).sort((a, b) => a - b);
+      for (const rn of rowNumbers) {
+        if (rn < startRow) continue;
+        const cells = (sheet.rows.get(rn) || []).filter(v => v !== undefined && v !== null && String(v).trim() !== '');
+        if (cells.length < 3) continue;
+        let rate = toNumber(cells[cells.length - 1]);
+        if (rate === null) continue;
+        if (rate > 1.5) rate = rate / 100;
+        let total = null;
+        for (let i = cells.length - 2; i >= 0; i--) {
+          const n = toNumber(cells[i]);
+          if (n !== null) { total = Math.round(n); break; }
+        }
+        let code = String(cells[0]).trim();
+        let name = code;
+        if (cells.length >= 4 && toNumber(cells[1]) === null) name = String(cells[1]).trim();
+        else if (code.includes('|')) {
+          const parts = code.split('|');
+          code = parts[0].trim();
+          name = parts.slice(1).join('|').trim();
+        }
+        if (/total/i.test(code)) continue;
+        const norm = normalize(code);
+        if (!allowed.has(norm)) continue;
+        out.push({ indicator: label, code: norm, name, total: total || 0, rate });
+      }
+      return out;
+    }
+    function parseRawRatio(sheets) {
+      const sheet = sheets.qq;
+      if (!sheet) return [];
+      const headers = getHeaders(sheet);
+      const unitCol = findCol(headers, ['un']);
+      const techCol = findCol(headers, ['login_tec']);
+      const nameCol = findCol(headers, ['tecnico']);
+      const goodCol = findCol(headers, ['dsc_tipo_tratamento']);
+      const groups = new Map();
+      if (unitCol === null || techCol === null || goodCol === null) return [];
+      for (const row of sheet.rows.values()) {
+        if (!isTargetUnit(getCell(row, unitCol))) continue;
+        const code = normalize(getCell(row, techCol));
+        if (!code) continue;
+        if (!groups.has(code)) {
+          let name = String(getCell(row, nameCol) || code);
+          if (name.includes('|')) name = name.split('|').slice(1).join('|').trim();
+          groups.set(code, { code, name, total: 0, good: 0 });
+        }
+        const g = groups.get(code);
+        g.total += 1;
+        if (normalize(getCell(row, goodCol)) === 'SEMQUEBRADEAGENDA') g.good += 1;
+      }
+      return Array.from(groups.values()).map(g => ({ indicator: 'Quadra Qualificada', code: g.code, name: g.name, total: g.total, rate: g.total ? g.good / g.total : 0 }));
+    }
+    function computeIndicators(sheets) {
+      const allowed = buildTechSet(sheets);
+      return [
+        { id: 'detalhe-tec1', name: 'TEC1', target: 0.95, data: parseEdited(sheets, 'Tec1 ed', 5, 'TEC1', allowed) },
+        { id: 'detalhe-tnps', name: 'TNPS', target: 0.95, data: parseEdited(sheets, 'Tnps ed', 6, 'TNPS', allowed) },
+        { id: 'detalhe-ura', name: 'URA', target: 0.85, data: parseEdited(sheets, 'ura2', 4, 'URA', allowed) },
+        { id: 'detalhe-nr35', name: 'NR35', target: 0.80, data: parseEdited(sheets, 'NR35 ed', 5, 'NR35', allowed) },
+        { id: 'detalhe-geo', name: 'Geolocalizacao', target: 0.95, data: parseEdited(sheets, 'Geo ed', 5, 'Geolocalizacao', allowed) },
+        { id: 'detalhe-qq', name: 'Quadra Qualificada', target: 0.90, data: parseRawRatio(sheets) }
+      ];
+    }
+    function rowHtml(items, emptyText, cls) {
+      if (!items.length) return '<tr><td colspan="4" class="empty">' + emptyText + '</td></tr>';
+      return items.map(item => {
+        const pct = Math.max(0, Math.min(100, Math.round(item.rate * 1000) / 10));
+        return '<tr class="' + cls + '"><td><span class="tech">' + html(item.code) + '</span><small>' + html(item.name) + '</small></td><td>' + fmtInt(item.total) + '</td><td><div class="mini"><span style="width:' + pct + '%"></span></div></td><td class="rate">' + fmtPercent(item.rate) + '</td></tr>';
+      }).join('');
+    }
+    function indicatorModal(ind) {
+      const inside = ind.data.filter(v => v.rate >= ind.target).sort((a, b) => b.rate - a.rate || b.total - a.total || String(a.name).localeCompare(String(b.name)));
+      const outside = ind.data.filter(v => v.rate < ind.target).sort((a, b) => a.rate - b.rate || b.total - a.total || String(a.name).localeCompare(String(b.name)));
+      return '<section class="modal" id="' + ind.id + '"><a class="modal-backdrop" href="#topo" aria-label="Fechar"></a><div class="modal-card"><div class="detail-head"><div><h2>' + html(ind.name) + '</h2><p>Meta: ' + fmtPercent(ind.target) + ' | Dentro: ' + inside.length + ' | Fora: ' + outside.length + '</p></div><a class="close-link" href="#topo">Fechar</a></div><div class="detail-grid"><div><h3>Dentro da meta</h3><table><thead><tr><th>Tecnico</th><th>Base</th><th>Indice</th><th>%</th></tr></thead><tbody>' + rowHtml(inside, 'Nenhum tecnico dentro da meta.', 'ok-row') + '</tbody></table></div><div><h3>Fora da meta</h3><table><thead><tr><th>Tecnico</th><th>Base</th><th>Indice</th><th>%</th></tr></thead><tbody>' + rowHtml(outside, 'Nenhum tecnico fora da meta.', 'bad-row') + '</tbody></table></div></div></div></section>';
+    }
+    function buildTechs(indicators) {
+      const map = new Map();
+      for (const ind of indicators) {
+        for (const row of ind.data) {
+          const code = normalize(row.code);
+          if (!map.has(code)) map.set(code, { code, name: row.name, totalBase: 0, indicators: new Map() });
+          const tech = map.get(code);
+          if (!tech.name || tech.name === code) tech.name = row.name;
+          tech.totalBase += Number(row.total || 0);
+          tech.indicators.set(ind.name, { name: ind.name, rate: row.rate, total: row.total, target: ind.target });
+        }
+      }
+      return Array.from(map.values()).sort((a, b) => String(a.name).localeCompare(String(b.name)) || String(a.code).localeCompare(String(b.code)));
+    }
+    function techListModal(techs) {
+      const items = techs.map(t => '<a class="tech-list-item" href="#tech-' + html(t.code) + '"><span>' + html(t.name) + '</span><small>' + html(t.code) + ' | Base total ' + fmtInt(t.totalBase) + '</small></a>').join('');
+      return '<section class="modal" id="tecnicos-avaliados"><a class="modal-backdrop" href="#topo" aria-label="Fechar"></a><div class="modal-card compact-modal"><div class="detail-head"><div><h2>Tecnicos avaliados</h2><p>Total: ' + techs.length + '</p></div><a class="close-link" href="#topo">Fechar</a></div><div class="tech-list">' + items + '</div></div></section>';
+    }
+    function techModal(tech, indicators) {
+      const rows = indicators.map(ind => {
+        const item = tech.indicators.get(ind.name);
+        if (!item) return '<tr><td>' + html(ind.name) + '</td><td colspan="4" class="empty">Sem avaliacao</td></tr>';
+        const ok = Math.round(item.rate * 1000) / 10 >= Math.round(item.target * 1000) / 10;
+        const pct = Math.max(0, Math.min(100, Math.round(item.rate * 1000) / 10));
+        return '<tr class="' + (ok ? 'ok-row' : 'bad-row') + '"><td>' + html(item.name) + '</td><td>' + fmtInt(item.total) + '</td><td><div class="mini"><span style="width:' + pct + '%"></span></div></td><td class="rate">' + fmtPercent(item.rate) + '</td><td>' + (ok ? 'Dentro' : 'Fora') + '</td></tr>';
+      }).join('');
+      return '<section class="modal" id="tech-' + html(tech.code) + '"><a class="modal-backdrop" href="#tecnicos-avaliados" aria-label="Voltar"></a><div class="modal-card compact-modal"><div class="detail-head"><div><h2>' + html(tech.name) + '</h2><p>' + html(tech.code) + ' | Indicadores individuais</p></div><a class="close-link" href="#tecnicos-avaliados">Voltar</a></div><table><thead><tr><th>Indicador</th><th>Base</th><th>Indice</th><th>%</th><th>Status</th></tr></thead><tbody>' + rows + '</tbody></table></div></section>';
+    }
+    function render(indicators) {
+      kpisEl.innerHTML = indicators.map(ind => {
+        const valid = ind.data.filter(v => Number.isFinite(v.rate));
+        const base = valid.reduce((sum, v) => sum + Number(v.total || 0), 0);
+        const good = valid.reduce((sum, v) => sum + Number(v.total || 0) * Number(v.rate || 0), 0);
+        const avg = base ? good / base : 0;
+        const inside = valid.filter(v => v.rate >= ind.target).length;
+        const outside = valid.length - inside;
+        const cls = Math.round(avg * 1000) / 10 >= Math.round(ind.target * 1000) / 10 ? 'in-meta' : 'out-meta';
+        return '<a class="kpi ' + cls + '" href="#' + ind.id + '"><span>' + html(ind.name) + '</span><strong>' + fmtPercent(avg) + '</strong><small>Base ' + fmtInt(base) + '<br>Dentro: ' + inside + ' | Fora: ' + outside + '</small></a>';
+      }).join('');
+      const techs = buildTechs(indicators);
+      actionsEl.innerHTML = '<a class="eval-button" href="#tecnicos-avaliados"><span>Tecnicos avaliados</span><strong>' + techs.length + '</strong></a>';
+      detailsEl.innerHTML = indicators.map(indicatorModal).join('') + techListModal(techs) + techs.map(t => techModal(t, indicators)).join('');
+    }
+    inputEl.addEventListener('change', function() {
+      selectedFile = inputEl.files && inputEl.files[0] ? inputEl.files[0] : null;
+      statusEl.textContent = selectedFile ? 'Base selecionada: ' + selectedFile.name : 'Usando base atual';
+    });
+    loadBaseButton.addEventListener('click', async function() {
+      const file = selectedFile;
+      if (!file) {
+        statusEl.textContent = 'Escolha uma base .xlsx antes de carregar.';
+        return;
+      }
+      statusEl.textContent = 'Analisando...';
+      try {
+        const sheets = await loadWorkbook(file);
+        render(computeIndicators(sheets));
+        statusEl.textContent = 'Base importada: ' + file.name;
+        location.hash = 'topo';
+      } catch (err) {
+        console.error(err);
+        statusEl.textContent = 'Nao foi possivel analisar a base.';
+      }
+    });
+    clearBaseButton.addEventListener('click', function() {
+      selectedFile = null;
+      inputEl.value = '';
+      kpisEl.innerHTML = initialState.kpis;
+      detailsEl.innerHTML = initialState.details;
+      actionsEl.innerHTML = initialState.actions;
+      statusEl.textContent = 'Usando base atual';
+      location.hash = 'topo';
+    });
+  </script>
+</body>
+</html>
