@@ -3,2125 +3,2122 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dashboard Corporativo - Indicadores</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <title>Gerador de Escala de Plantão</title>
   <style>
     :root {
-      --ink: #0f172a;
-      --muted: #64748b;
-      --line: #e2e8f0;
-      --paper: #f8fafc;
+      --bg: #f4f6f8;
       --panel: #ffffff;
-      --primary: #0369a1;
-      --primary-strong: #075985;
-      --primary-light: #e0f2fe;
-      --success: #059669;
-      --success-light: #d1fae5;
-      --danger: #dc2626;
-      --danger-light: #fee2e2;
-      --warning: #d97706;
-      --warning-light: #fef3c7;
-      --neutral-light: #f1f5f9;
-      --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08);
-      --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.12);
-      --shadow-lg: 0 12px 28px rgba(15, 23, 42, 0.16);
+      --ink: #1b2430;
+      --muted: #637083;
+      --line: #d9e0e8;
+      --accent: #176b87;
+      --accent-dark: #104d61;
+      --green: #dff3e5;
+      --green-ink: #176b35;
+      --red: #f9e1df;
+      --red-ink: #9a2c25;
+      --base: #e9f1fb;
+      --base-ink: #24527a;
+      --shadow: 0 14px 32px rgba(18, 32, 51, .10);
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      max-width: 100%;
+      overflow-x: hidden;
+    }
 
     body {
-      font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
       color: var(--ink);
-      background: var(--paper);
-      line-height: 1.6;
+      background: var(--bg);
     }
 
-    header {
-      background: rgba(255, 255, 255, 0.96);
-      border-bottom: 2px solid var(--line);
-      padding: 18px 32px;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      box-shadow: var(--shadow-sm);
-      backdrop-filter: blur(8px);
+    button, input, textarea, select {
+      font: inherit;
     }
 
-    .header-content {
-      max-width: 1440px;
-      margin: 0 auto;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 24px;
+    .app {
+      min-height: 100vh;
+      display: block;
     }
-
-    .brand h1 {
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      color: var(--ink);
-    }
-
-    .brand .subtitle {
-      font-size: 13px;
-      color: var(--muted);
-      margin-top: 2px;
-    }
-
-    .upload-zone {
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .file-input-wrapper {
-      position: relative;
-      overflow: hidden;
-      display: inline-block;
-    }
-
-    .file-input-wrapper input[type=file] {
-      position: absolute;
-      left: -9999px;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      min-height: 42px;
-      padding: 10px 18px;
-      border-radius: 10px;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      border: 2px solid transparent;
-      font-family: inherit;
-      text-decoration: none;
-      white-space: nowrap;
-    }
-
-    .btn-primary {
-      background: var(--primary);
-      color: white;
-      border-color: var(--primary);
-    }
-
-    .btn-primary:hover,
-    .btn-export:hover {
-      background: #0284c7;
-      border-color: #0284c7;
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-md);
-    }
-
-    .btn-export {
-      background: var(--primary);
-      color: white;
-      border-color: var(--primary);
-    }
-
-    .btn-secondary {
-      background: white;
-      color: var(--ink);
-      border-color: var(--line);
-    }
-
-    .btn-secondary:hover {
-      border-color: var(--primary);
-      color: var(--primary);
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .status-text {
-      min-width: 220px;
-      font-size: 13px;
-      color: var(--muted);
-      font-family: 'JetBrains Mono', monospace;
-      text-align: right;
-    }
-
-    .status-text.is-warning { color: var(--warning); }
-    .status-text.is-error { color: var(--danger); }
-    .status-text.is-success { color: var(--success); }
 
     main {
-      max-width: 1440px;
-      margin: 0 auto;
-      padding: 30px 32px 48px;
-    }
-
-    .tabs {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 28px;
-      border-bottom: 2px solid var(--line);
-      overflow-x: auto;
-    }
-
-    .tab {
-      padding: 12px 22px;
-      border: none;
-      background: transparent;
-      color: var(--muted);
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      border-bottom: 3px solid transparent;
-      margin-bottom: -2px;
-      transition: all 0.2s;
-      white-space: nowrap;
-      font-family: inherit;
-    }
-
-    .tab:hover {
-      color: var(--ink);
-      background: var(--neutral-light);
-    }
-
-    .tab.active {
-      color: var(--primary);
-      border-bottom-color: var(--primary);
-    }
-
-    .tab-content {
-      display: none;
-      animation: fadeIn 0.24s ease;
-    }
-
-    .tab-content.active { display: block; }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .panel {
-      background: var(--panel);
-      border: 2px solid var(--line);
-      border-radius: 16px;
       padding: 24px;
-      margin-bottom: 24px;
-      box-shadow: var(--shadow-sm);
+      overflow: auto;
     }
 
-    .panel-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 22px;
-      padding-bottom: 16px;
-      border-bottom: 2px solid var(--line);
-      flex-wrap: wrap;
+    h1 {
+      margin: 0 0 4px;
+      font-size: 23px;
+      line-height: 1.2;
     }
 
-    .panel-title {
-      font-size: 18px;
-      font-weight: 700;
-      color: var(--ink);
-    }
-
-    .panel-subtitle {
-      font-size: 13px;
+    .sub {
+      margin: 0 0 20px;
       color: var(--muted);
-      margin-top: 2px;
+      font-size: 13px;
     }
 
-    .controls-row {
+    .group {
+      padding: 16px 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .group:first-of-type {
+      border-top: 0;
+      padding-top: 0;
+    }
+
+    .group-title {
       display: flex;
       align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    label {
+      display: block;
+      margin: 12px 0 6px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .02em;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+      color: var(--ink);
+      padding: 10px 11px;
+      outline: none;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(23, 107, 135, .12);
+    }
+
+    textarea {
+      min-height: 250px;
+      resize: vertical;
+      line-height: 1.35;
+      font-size: 13px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .actions.wide {
+      grid-template-columns: 1fr;
+    }
+
+    button {
+      border: 0;
+      border-radius: 6px;
+      padding: 10px 12px;
+      cursor: pointer;
+      font-weight: 700;
+      background: var(--accent);
+      color: #fff;
+      min-height: 40px;
+    }
+
+    button:hover { background: var(--accent-dark); }
+
+    button.secondary {
+      color: var(--ink);
+      background: #e8edf2;
+    }
+
+    button.secondary:hover { background: #d8e0e8; }
+
+    button.danger {
+      background: #b9443d;
+    }
+
+    button.danger:hover { background: #96332d; }
+
+    .toolbar {
+      width: min(1180px, 100%);
+      margin: 0 auto 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 280px;
+    }
+
+    .brand img {
+      width: 54px;
+      height: 54px;
+      border-radius: 8px;
+      object-fit: contain;
+      object-position: center;
+      background: #fff;
+      flex: 0 0 auto;
+    }
+
+    .top-controls {
+      display: flex;
+      align-items: end;
       justify-content: flex-end;
       flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .field,
-    .search-box {
-      min-height: 42px;
-      border: 2px solid var(--line);
-      border-radius: 10px;
-      background: var(--panel);
-      padding: 8px 12px;
-      font-size: 14px;
-      font-family: inherit;
-      outline: none;
-      transition: all 0.2s ease;
-    }
-
-    .field:focus,
-    .search-box:focus-within {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px var(--primary-light);
-    }
-
-    .search-box {
-      display: flex;
-      align-items: center;
       gap: 8px;
-      min-width: 260px;
     }
 
-    .search-box input {
-      border: none;
-      background: transparent;
-      font-size: 14px;
-      font-family: inherit;
-      width: 100%;
-      outline: none;
+    .top-field {
+      min-width: 136px;
     }
 
-    .kpis-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
-      gap: 14px;
-      margin-bottom: 24px;
+    .top-field label {
+      margin-top: 0;
     }
 
-    .kpi-card {
-      background: var(--panel);
-      border: 2px solid var(--line);
-      border-radius: 18px;
-      padding: 16px;
-      min-height: 158px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      gap: 10px;
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-      cursor: pointer;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .kpi-card::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      opacity: 0.08;
-      background: var(--line);
-      pointer-events: none;
-    }
-
-    .kpi-card.status-success::before { background: var(--success); }
-    .kpi-card.status-danger::before { background: var(--danger); }
-    .kpi-card.status-warning::before { background: var(--warning); }
-
-    .kpi-card:hover {
-      transform: translateY(-3px);
-      box-shadow: var(--shadow-lg);
-      border-color: var(--primary);
-    }
-
-    .kpi-card.is-active {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 4px var(--primary-light), var(--shadow-md);
-    }
-
-    .kpi-name,
-    .kpi-meta,
-    .kpi-footer,
-    .kpi-value { position: relative; z-index: 1; }
-
-    .kpi-name {
-      font-size: 13px;
-      color: var(--muted);
-      font-weight: 700;
-      line-height: 1.25;
-      min-height: 34px;
-    }
-
-    .kpi-value {
-      font-size: 30px;
-      font-weight: 700;
-      letter-spacing: -0.04em;
-      font-family: 'JetBrains Mono', monospace;
-      line-height: 1;
-    }
-
-    .kpi-card.status-success .kpi-value { color: var(--success); }
-    .kpi-card.status-danger .kpi-value { color: var(--danger); }
-    .kpi-card.status-warning .kpi-value { color: var(--warning); }
-
-    .kpi-meta {
+    .top-field input {
+      height: 34px;
+      padding: 7px 9px;
       font-size: 12px;
-      color: var(--muted);
     }
 
-    .kpi-footer {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .badge,
-    .status-badge,
-    .trend-badge {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
+    button.small {
+      min-height: 34px;
+      padding: 7px 10px;
+      font-size: 12px;
       line-height: 1.1;
       white-space: nowrap;
     }
 
-    .badge-success,
-    .trend-improved { background: var(--success-light); color: var(--success); }
-    .badge-danger,
-    .trend-worsened { background: var(--danger-light); color: var(--danger); }
-    .badge-warning { background: var(--warning-light); color: var(--warning); }
-    .trend-same,
-    .badge-neutral { background: var(--neutral-light); color: var(--muted); }
-
-    .indicator-detail-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
-      gap: 10px;
-      margin-bottom: 18px;
+    button.small.active {
+      background: var(--accent-dark);
+      color: #fff;
+      box-shadow: 0 0 0 3px rgba(23, 107, 135, .16);
+      transform: translateY(-1px);
     }
 
-    .indicator-tech-list {
+    .summary {
+      width: min(1180px, 100%);
+      margin: 0 auto 14px;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      grid-template-columns: repeat(3, minmax(145px, 1fr)) auto;
+      align-items: stretch;
       gap: 8px;
     }
 
-    .indicator-tech-item,
-    .history-item,
-    .mini-card {
+    .metric {
+      background: var(--panel);
       border: 1px solid var(--line);
-      border-radius: 12px;
-      background: var(--paper);
-      padding: 12px;
+      border-radius: 8px;
+      padding: 9px 11px;
+      box-shadow: var(--shadow);
+      min-height: 58px;
     }
 
-    .indicator-tech-item {
+    .summary-actions {
+      display: flex;
+      align-items: stretch;
+      gap: 8px;
+      min-width: 142px;
+    }
+
+    .summary-actions .small {
+      min-width: 66px;
+      height: 100%;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    button.metric {
+      min-height: 0;
+      color: var(--ink);
+      text-align: left;
+      cursor: pointer;
+    }
+
+    button.metric:hover,
+    button.metric.active {
+      background: #eef6f8;
+      border-color: var(--accent);
+    }
+
+    button.metric:focus-visible {
+      outline: 3px solid rgba(23, 107, 135, .24);
+      outline-offset: 2px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .02em;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 21px;
+      line-height: 1;
+    }
+
+    .sheet-wrap {
+      --name-col: 280px;
+      --group-col: 64px;
+      --date-col: 112px;
+      width: min(1180px, 100%);
+      max-width: calc(100vw - 48px);
+      margin: 0 auto;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      overflow-x: hidden;
+      overflow-y: visible;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 22px;
+      background: rgba(15, 23, 42, .42);
+      opacity: 0;
+      transition: opacity .18s ease;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+      opacity: 1;
+    }
+
+    .modal {
+      width: min(720px, 100%);
+      max-height: min(760px, 92vh);
+      overflow: hidden;
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 22px 70px rgba(15, 23, 42, .24);
+      transform: translateY(8px) scale(.98);
+      transition: transform .18s ease;
+    }
+
+    .modal-backdrop.open .modal {
+      transform: translateY(0) scale(1);
+    }
+
+    .modal-header,
+    .modal-footer {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
     }
 
-    .indicator-tech-main { min-width: 0; }
-
-    .login,
-    .tech-login,
-    .value-cell,
-    .mono {
-      font-family: 'JetBrains Mono', monospace;
+    .modal-footer {
+      border-top: 1px solid var(--line);
+      border-bottom: 0;
+      justify-content: flex-end;
     }
 
-    .login,
-    .tech-login {
-      color: var(--muted);
-      font-size: 12px;
+    .modal-header h2 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.2;
     }
 
-    .tech-name {
-      font-weight: 700;
-      color: var(--ink);
-    }
-
-    .value-cell {
-      font-weight: 700;
-    }
-
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 14px;
-      margin-bottom: 24px;
-    }
-
-    .summary-card {
-      background: var(--panel);
-      border: 2px solid var(--line);
-      border-radius: 18px;
+    .modal-body {
+      max-height: 58vh;
+      overflow: auto;
       padding: 18px;
-      box-shadow: var(--shadow-sm);
     }
 
-    .summary-label {
-      font-size: 12px;
-      color: var(--muted);
+    .modal-grid {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) 110px auto;
+      gap: 10px;
+      align-items: end;
+      margin-bottom: 16px;
+    }
+
+    .duty-modal-grid {
+      grid-template-columns: minmax(180px, 1fr) minmax(220px, 1.2fr) auto;
+    }
+
+    .duty-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .current-duty-box {
+      margin-top: 14px;
+      border-top: 1px solid var(--line);
+      padding-top: 14px;
+    }
+
+    .current-duty-title {
+      margin: 0 0 10px;
+      color: var(--ink);
+      font-size: 13px;
       font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
-      margin-bottom: 8px;
+      letter-spacing: .02em;
     }
 
-    .summary-value {
-      font-size: 30px;
-      font-weight: 800;
-      line-height: 1;
-      letter-spacing: -0.04em;
+    .current-duty-list {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
     }
 
-    .summary-note {
-      color: var(--muted);
+    .current-duty-list .tech-item {
+      grid-template-columns: minmax(160px, 1fr) 86px auto;
+    }
+
+    .tech-list {
+      display: grid;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .tech-item {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) 74px auto;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 10px;
+      background: #fbfcfd;
+    }
+
+    .tech-item strong {
       font-size: 13px;
-      margin-top: 8px;
+    }
+
+    .badge {
+      justify-self: start;
+      border-radius: 999px;
+      padding: 4px 9px;
+      background: #e9f1fb;
+      color: #24527a;
+      font-size: 12px;
+      font-weight: 700;
     }
 
     table {
       width: 100%;
+      min-width: 0;
+      max-width: 100%;
+      table-layout: fixed;
       border-collapse: collapse;
-      font-size: 14px;
+      background: #fff;
     }
 
-    thead { background: var(--paper); }
-
-    th {
+    th, td {
+      border: 1px solid #aeb8c4;
+      padding: 5px 7px;
+      height: 28px;
+      font-size: 11px;
       text-align: left;
-      padding: 12px 14px;
-      font-weight: 800;
-      color: var(--ink);
-      border-bottom: 2px solid var(--line);
-      position: sticky;
-      top: 0;
-      background: var(--paper);
-      z-index: 10;
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      white-space: nowrap;
-    }
-
-    td {
-      padding: 13px 14px;
-      border-bottom: 1px solid var(--line);
       vertical-align: middle;
     }
 
-    tbody tr { transition: background 0.2s; }
-    tbody tr:hover { background: var(--paper); }
-
-    .table-wrap {
-      overflow-x: auto;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-    }
-
-    .rank-position {
-      font-weight: 800;
-      font-family: 'JetBrains Mono', monospace;
-    }
-
-    .chart-container { margin-bottom: 24px; }
-
-    .chart-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 12px;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
-    }
-
-    .chart-title {
-      font-size: 16px;
-      font-weight: 800;
-      color: var(--ink);
-    }
-
-    .chart-meta {
-      font-size: 13px;
-      color: var(--muted);
-      text-align: right;
-    }
-
-    .bar-chart {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .bar-row {
-      display: grid;
-      grid-template-columns: 220px 1fr 90px;
-      gap: 14px;
-      align-items: center;
-    }
-
-    .bar-label {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--ink);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .bar-track {
-      height: 32px;
-      background: var(--paper);
-      border-radius: 10px;
-      overflow: hidden;
-      position: relative;
-      border: 1px solid var(--line);
-    }
-
-    .bar-fill {
-      height: 100%;
-      min-width: 0;
-      background: linear-gradient(90deg, var(--primary), #0284c7);
-      border-radius: 10px;
-      transition: width 0.55s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-      display: flex;
-      align-items: center;
-      padding: 0 10px;
-      color: white;
-      font-size: 12px;
-      font-weight: 800;
-      font-family: 'JetBrains Mono', monospace;
-      overflow: hidden;
-      white-space: nowrap;
-    }
-
-    .bar-fill.success { background: linear-gradient(90deg, var(--success), #10b981); }
-    .bar-fill.danger { background: linear-gradient(90deg, var(--danger), #ef4444); }
-    .bar-fill.warning { background: linear-gradient(90deg, var(--warning), #f59e0b); }
-
-    .bar-value {
-      font-size: 14px;
-      font-weight: 800;
-      text-align: right;
-      font-family: 'JetBrains Mono', monospace;
-    }
-
-    .history-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 12px;
-    }
-
-    .history-item {
-      cursor: pointer;
-      transition: all 0.2s ease;
-      background: var(--panel);
-    }
-
-    .history-item:hover {
-      border-color: var(--primary);
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
-    }
-
-    .history-item.is-current {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px var(--primary-light);
-    }
-
-    .history-title {
-      font-weight: 800;
-      margin-bottom: 4px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .history-meta {
-      color: var(--muted);
-      font-size: 13px;
-      margin-bottom: 8px;
-    }
-
-    .empty-state {
-      text-align: center;
-      padding: 76px 20px;
-      color: var(--muted);
-    }
-
-    .empty-icon {
-      font-size: 58px;
-      margin-bottom: 14px;
-      opacity: 0.35;
-    }
-
-    .empty-title {
-      font-size: 18px;
-      font-weight: 800;
-      margin-bottom: 8px;
-      color: var(--ink);
-    }
-
-    .empty-text { font-size: 14px; }
-
-    .print-only { display: none; }
-
-    body.indicator-screen-open {
-      overflow: hidden;
-    }
-
-    .indicator-screen {
-      position: fixed;
-      inset: 0;
-      z-index: 1000;
-      display: grid;
-      place-items: start center;
-      padding: 24px;
-      opacity: 0;
-      visibility: hidden;
-      pointer-events: none;
-      transition: opacity 0.22s ease, visibility 0.22s ease;
-    }
-
-    .indicator-screen.show {
-      opacity: 1;
-      visibility: visible;
-      pointer-events: auto;
-    }
-
-    .indicator-screen-backdrop {
-      position: absolute;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.52);
-      backdrop-filter: blur(5px);
-    }
-
-    .indicator-screen-panel {
-      position: relative;
-      width: min(1180px, 100%);
-      max-height: calc(100vh - 48px);
-      overflow: auto;
-      background: var(--panel);
-      border: 2px solid var(--line);
-      border-radius: 24px;
-      box-shadow: var(--shadow-lg);
-      transform: translateY(18px) scale(0.98);
-      transition: transform 0.22s ease;
-    }
-
-    .indicator-screen.show .indicator-screen-panel {
-      transform: translateY(0) scale(1);
-    }
-
-    .indicator-screen-top {
+    th {
       position: sticky;
       top: 0;
-      z-index: 2;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      padding: 16px 18px;
-      background: rgba(255, 255, 255, 0.96);
-      border-bottom: 2px solid var(--line);
-      backdrop-filter: blur(8px);
+      z-index: 1;
+      background: #17212f;
+      color: #fff;
+      font-weight: 700;
     }
 
-    .indicator-screen-title-wrap {
-      min-width: 0;
-      flex: 1;
-    }
-
-    .indicator-screen-title {
-      font-size: 20px;
-      font-weight: 800;
-      color: var(--ink);
+    th small {
+      display: block;
+      margin-top: 2px;
+      color: #d9e0e8;
+      font-size: 9px;
+      font-weight: 400;
       line-height: 1.2;
     }
 
-    .indicator-screen-body {
+    #scheduleTable th:first-child {
+      width: var(--name-col);
+      min-width: var(--name-col);
+      max-width: var(--name-col);
+      background: #0b2545;
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .02em;
+      text-align: left;
+    }
+
+    td.name {
+      width: var(--name-col);
+      min-width: var(--name-col);
+      max-width: var(--name-col);
+      font-weight: 700;
+      color: #0b1f3a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #scheduleTable th:nth-child(2) {
+      width: var(--group-col);
+      min-width: var(--group-col);
+      max-width: var(--group-col);
+      background: #0b2545;
+      color: #ffffff;
+      text-align: center;
+      font-weight: 800;
+    }
+
+    td.group-cell {
+      width: var(--group-col);
+      min-width: var(--group-col);
+      max-width: var(--group-col);
+      text-align: center;
+      font-weight: 700;
+      color: #344256;
+      background: #f6f8fa;
+    }
+
+    .group-select {
+      width: 48px;
+      min-width: 48px;
+      height: 24px;
+      padding: 2px 4px;
+      border-radius: 5px;
+      border: 1px solid #b8c4d1;
+      background: #ffffff;
+      color: #0b376d;
+      font-size: 11px;
+      font-weight: 800;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    #scheduleTable th:not(:first-child):not(:nth-child(2)) {
+      width: var(--date-col);
+      min-width: var(--date-col);
+      max-width: var(--date-col);
+      text-align: center;
+    }
+
+    td.status-cell {
+      width: var(--date-col);
+      min-width: var(--date-col);
+      max-width: var(--date-col);
+      text-align: center;
+      font-weight: 700;
+      cursor: default;
+      user-select: none;
+    }
+
+    body.compact-groups #scheduleTable th:first-child,
+    body.compact-groups td.name {
+      width: var(--name-col);
+      min-width: var(--name-col);
+      max-width: var(--name-col);
+    }
+
+    body.compact-groups #scheduleTable th:nth-child(2),
+    body.compact-groups td.group-cell {
+      width: var(--group-col);
+      min-width: var(--group-col);
+      max-width: var(--group-col);
+    }
+
+    body.compact-groups #scheduleTable th:not(:first-child):not(:nth-child(2)),
+    body.compact-groups td.status-cell {
+      width: var(--date-col);
+      min-width: var(--date-col);
+      max-width: var(--date-col);
+    }
+
+    .plantao {
+      background: var(--green);
+      color: var(--green-ink);
+    }
+
+    .folga {
+      background: var(--red);
+      color: var(--red-ink);
+    }
+
+    .empty {
+      background: #fff;
+      color: #9aa4b2;
+    }
+
+    td.status-cell.clickable-cell {
+      cursor: pointer;
+      box-shadow: inset 0 0 0 2px rgba(23, 107, 135, .16);
+    }
+
+    td.status-cell.clickable-cell:hover {
+      filter: brightness(.97);
+      text-decoration: underline;
+    }
+
+    .empty-message {
       padding: 18px;
+      color: var(--muted);
+      text-align: center;
+      font-weight: 700;
+      background: #fff;
     }
 
-    .indicator-back-btn {
-      flex: 0 0 auto;
+    .hint {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
     }
 
-    .indicator-screen-actions {
-      flex: 0 1 320px;
+    .file-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
-    @media (max-width: 900px) {
-      .indicator-screen {
-        padding: 0;
+    .file-row input[type="file"] {
+      padding: 8px;
+      font-size: 12px;
+    }
+
+    @media (max-width: 920px) {
+      .app {
+        grid-template-columns: 1fr;
       }
 
-      .indicator-screen-panel {
-        width: 100%;
-        min-height: 100vh;
-        max-height: none;
-        border: 0;
-        border-radius: 0;
+      main {
+        padding: 16px;
       }
 
-      .indicator-screen-top {
+      .sheet-wrap {
+        max-width: calc(100vw - 32px);
+      }
+
+      .summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .summary-actions {
+        grid-column: 1 / -1;
+        min-width: 0;
+      }
+
+      .summary-actions .small {
+        flex: 1;
+      }
+
+      .toolbar {
         align-items: stretch;
         flex-direction: column;
       }
 
-      .indicator-screen-actions {
-        flex: 1 1 auto;
+      .duty-modal-grid {
+        grid-template-columns: 1fr;
       }
 
-      .indicator-back-btn {
-        width: 100%;
+      .duty-actions {
+        justify-content: stretch;
+      }
+
+      .duty-actions button {
+        flex: 1;
       }
     }
 
-    @media (max-width: 900px) {
-      header { position: static; padding: 16px; }
-      .header-content { align-items: flex-start; flex-direction: column; }
-      .upload-zone { justify-content: flex-start; width: 100%; }
-      .status-text { width: 100%; text-align: left; }
-      main { padding: 22px 16px 40px; }
-      .kpis-grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
-      .bar-row { grid-template-columns: 1fr; gap: 8px; }
-      .bar-value { text-align: left; }
-      .search-box { min-width: 100%; }
-      .field { width: 100%; }
-      .controls-row { width: 100%; justify-content: stretch; }
-      .btn { width: 100%; }
+    @page {
+      size: A4 landscape;
+      margin: 8mm;
     }
 
     @media print {
-      @page { margin: 12mm; }
-      body { background: white; }
-      header,
-      .tabs,
-      .no-print,
-      .controls-row,
-      .search-box,
-      .indicator-screen { display: none !important; }
-      .print-only { display: block; margin-bottom: 16px; }
-      main { max-width: none; padding: 0; }
-      .tab-content { display: none !important; }
-      .tab-content.active { display: block !important; animation: none; }
-      .panel,
-      .summary-card,
-      .kpi-card { break-inside: avoid; box-shadow: none; }
-      .kpis-grid { grid-template-columns: repeat(3, 1fr); }
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+
+      body { background: #fff; }
+      .summary, .hint, .top-controls { display: none !important; }
+      .toolbar {
+        display: flex !important;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .brand img {
+        width: 44px;
+        height: 44px;
+        object-fit: contain;
+      }
+      h1 { font-size: 16px; }
+      .app { display: block; }
+      main {
+        padding: 0;
+        overflow: visible;
+      }
+      .sheet-wrap {
+        border: 0;
+        box-shadow: none;
+        overflow: visible;
+      }
+      table {
+        min-width: 0 !important;
+        width: 100% !important;
+        table-layout: fixed;
+      }
+      th {
+        position: static;
+      }
+      th, td {
+        padding: 3px 2px;
+        height: auto;
+        font-size: 7px;
+        white-space: normal;
+        word-break: break-word;
+      }
+      th small {
+        font-size: 6px;
+      }
+      td.name {
+        min-width: 0;
+        max-width: none;
+        width: 125px;
+      }
+      td.group-cell {
+        min-width: 0;
+        width: 28px;
+      }
+      .group-select {
+        width: 100%;
+        border: 0;
+        background: transparent;
+        appearance: none;
+        padding: 0;
+      }
+      td.status-cell {
+        min-width: 0;
+      }
     }
   </style>
 </head>
 <body>
-  <header>
-    <div class="header-content">
-      <div class="brand">
-        <h1>📊 Dashboard Corporativo</h1>
-        <div class="subtitle">Indicadores, ranking, histórico local e comparação automática</div>
-      </div>
-      <div class="upload-zone no-print">
-        <div class="file-input-wrapper">
-          <label for="fileInput" class="btn btn-primary">📁 Selecionar Excel</label>
-          <input type="file" id="fileInput" accept=".xlsx,.xls">
-        </div>
-        <button id="exportPdfBtn" class="btn btn-export" type="button">+ PDF</button>
-        <button id="exportImageBtn" class="btn btn-export" type="button">+ Imagem</button>
-        <button id="clearBtn" class="btn btn-secondary" type="button">🧹 Limpar tela</button>
-        <span id="statusText" class="status-text">Aguardando arquivo...</span>
-      </div>
-    </div>
-  </header>
-
-  <main id="dashboardRoot">
-    <div class="print-only">
-      <h1>Dashboard Corporativo - Indicadores</h1>
-      <p id="printInfo" class="panel-subtitle"></p>
-    </div>
-
-    <div class="tabs no-print">
-      <button class="tab active" data-tab="overview" type="button">Indicadores</button>
-      <button class="tab" data-tab="ranking" type="button">Ranking por técnico</button>
-      <button class="tab" data-tab="charts" type="button">Gráficos</button>
-      <button class="tab" data-tab="summary" type="button">Resumo executivo</button>
-      <button class="tab" data-tab="history" type="button">Histórico local</button>
-    </div>
-
-    <div id="overviewTab" class="tab-content active">
-      <div id="kpisContainer"></div>
-      <div id="indicatorDetailsContainer"></div>
-    </div>
-
-    <div id="rankingTab" class="tab-content">
-      <div class="panel">
-        <div class="panel-header">
+  <div class="app">
+    <main>
+      <div class="toolbar">
+        <div class="brand">
+          <img src="C:/Users/teste/OneDrive/Desktop/file.png" alt="Lumar Telecom">
           <div>
-            <h2 class="panel-title">Ranking de Técnicos</h2>
-            <div class="panel-subtitle">Escolha um indicador para ordenar automaticamente do melhor para o pior.</div>
+            <h1 id="pageTitle">Escala de Plantão - Instalação</h1>
           </div>
-          <div class="controls-row no-print">
-            <select id="rankingIndicatorSelect" class="field" aria-label="Selecionar indicador"></select>
-            <select id="rankingModeSelect" class="field" aria-label="Modo do ranking">
-              <option value="all">Mostrar todos</option>
-              <option value="top10">Top 10</option>
-              <option value="bottom10">Piores 10</option>
+        </div>
+        <div class="top-controls">
+          <div class="top-field">
+            <label for="scheduleMonth">Mês da escala</label>
+            <input id="scheduleMonth" type="month">
+          </div>
+          <button id="generalViewBtn" class="small" type="button">Geral</button>
+          <button id="openDutyBtn" class="small" type="button">Plantonistas por data</button>
+          <button id="sundayOffBtn" class="small" type="button">Folgas Dom/Fer.</button>
+          <button id="addTechBtn" class="small" type="button">Adicionar técnico</button>
+        </div>
+      </div>
+
+      <section class="summary" aria-label="Resumo da escala">
+        <button class="metric" type="button" data-filter="domingos"><span>Domingos/Feriados</span><strong id="sundayDutyTotal">0</strong></button>
+        <button class="metric" type="button" data-filter="grupo-a"><span>Plantões sábados A</span><strong id="groupATotal">0</strong></button>
+        <button class="metric" type="button" data-filter="grupo-b"><span>Plantões sábados B</span><strong id="groupBTotal">0</strong></button>
+        <div class="summary-actions">
+          <button id="exportBtn" class="small" type="button">Excel</button>
+          <button id="printBtn" class="small secondary" type="button">PDF</button>
+        </div>
+      </section>
+
+      <section class="sheet-wrap">
+        <table id="scheduleTable">
+          <thead></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="techModal" aria-hidden="true">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="techModalTitle">
+      <div class="modal-header">
+        <h2 id="techModalTitle">Técnicos</h2>
+        <button id="closeTechModalBtn" class="small secondary" type="button">Fechar</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-grid">
+          <div>
+            <label for="techNameInput">Nome do técnico</label>
+            <input id="techNameInput" type="text" autocomplete="off">
+          </div>
+          <div>
+            <label for="techGroupInput">Grupo</label>
+            <select id="techGroupInput">
+              <option value="A">Grupo A</option>
+              <option value="B">Grupo B</option>
             </select>
-            <div class="search-box">
-              <span>🔍</span>
-              <input type="text" id="searchInput" placeholder="Buscar técnico ou login...">
-            </div>
           </div>
+          <button id="saveTechBtn" class="small" type="button">Adicionar</button>
         </div>
-        <div id="rankingContainer"></div>
+        <ul class="tech-list" id="techList"></ul>
       </div>
-    </div>
+      <div class="modal-footer">
+        <button id="doneTechModalBtn" class="small" type="button">Concluir</button>
+      </div>
+    </section>
+  </div>
 
-    <div id="chartsTab" class="tab-content">
-      <div id="chartsContainer"></div>
-    </div>
-
-    <div id="summaryTab" class="tab-content">
-      <div id="summaryContainer"></div>
-    </div>
-
-    <div id="historyTab" class="tab-content">
-      <div class="panel">
-        <div class="panel-header">
+  <div class="modal-backdrop" id="dutyModal" aria-hidden="true">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="dutyModalTitle">
+      <div class="modal-header">
+        <h2 id="dutyModalTitle">Plantonistas por data</h2>
+        <button id="closeDutyModalBtn" class="small secondary" type="button">Fechar</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-grid duty-modal-grid">
           <div>
-            <h2 class="panel-title">Histórico Local</h2>
-            <div class="panel-subtitle">As últimas 20 bases ficam salvas neste navegador. Clique em uma base para carregá-la.</div>
+            <label for="dutyDateInput">Data</label>
+            <select id="dutyDateInput"></select>
+          </div>
+          <div>
+            <label for="dutyTechInput">Técnico</label>
+            <select id="dutyTechInput"></select>
+          </div>
+          <div class="duty-actions">
+            <button id="saveDutyBtn" class="small" type="button">Adicionar</button>
+            <button id="removeDutyBtn" class="small danger" type="button">Retirar</button>
           </div>
         </div>
-        <div id="historyContainer"></div>
+        <p class="hint">Escolha um domingo ou feriado do mês para adicionar ou retirar plantonista. Para mudar sábados, altere o grupo do técnico na visão geral e escolha quem do outro grupo vai trocar.</p>
+        <div class="current-duty-box">
+          <h3 class="current-duty-title">Plantonistas atuais</h3>
+          <ul class="current-duty-list" id="currentDutyList"></ul>
+        </div>
       </div>
-    </div>
-  </main>
+      <div class="modal-footer">
+        <button id="doneDutyModalBtn" class="small" type="button">Concluir</button>
+      </div>
+    </section>
+  </div>
 
-  <section id="indicatorScreen" class="indicator-screen no-print" aria-hidden="true">
-    <div class="indicator-screen-backdrop" data-close-indicator="true"></div>
-    <div class="indicator-screen-panel" role="dialog" aria-modal="true" aria-labelledby="indicatorScreenTitle">
-      <div id="indicatorScreenContent"></div>
-    </div>
-  </section>
+  <div class="modal-backdrop" id="offDateModal" aria-hidden="true">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="offDateModalTitle">
+      <div class="modal-header">
+        <h2 id="offDateModalTitle">Alterar data da folga</h2>
+        <button id="closeOffDateModalBtn" class="small secondary" type="button">Fechar</button>
+      </div>
+      <div class="modal-body">
+        <p class="hint" id="offDateInfo">Escolha uma nova data para a folga.</p>
+        <label for="offDateInput">Nova data da folga</label>
+        <input id="offDateInput" type="date">
+      </div>
+      <div class="modal-footer">
+        <button id="cancelOffDateBtn" class="small secondary" type="button">Cancelar</button>
+        <button id="saveOffDateBtn" class="small" type="button">Salvar data</button>
+      </div>
+    </section>
+  </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
   <script>
-    'use strict';
+    const defaultNames = [
+      "ADRYEL FELIPE DOS SANTOS NASCIMENTO",
+      "ALEXANDRE PEREIRA DE OLIVEIRA PINHEIRO F",
+      "CARLOS EDUARDO DA PAZ GOMES",
+      "DAVID MAGDIEL CARVALHO BARROS",
+      "EDSON VIEIRA DE CARVALHO",
+      "EMANUEL FELIPE BARROS DA SILVA",
+      "FELIPE CLEYSON DE ARAUJO SILVA",
+      "FRANCISCO DE ASSIS DOS SANTOS SILVA",
+      "GILMAR ALVES DE SOUSA SILVA",
+      "ÍTALO MEDEIROS DO NASCIMENTO",
+      "JEFFERSON EMANUEL SOARES DA SILVA",
+      "JEFFERSON LUIZ AMORIM DA SILVA",
+      "JOÃO PEDRO SILVA DE MACEDO",
+      "JOSÉ SÉRGIO PEREIRA LUZ",
+      "JÚLIO CÉSAR NERI DE SOUSA",
+      "KAYO RAMON DO NASCIMENTO MACEDO",
+      "LUCAS GABRIEL SOUSA DE ARAUJO",
+      "MARCOS PAULO RODRIGUES SANTOS",
+      "PEDRO HENRIQUE DA PAZ GOMES",
+      "PEDRO VICTOR FERREIRA COSTA",
+      "PEDRO VICTOR MARTINS LIMA",
+      "RODRIGO GUIMARAES MARQUES",
+      "SEBASTIÃO SOUSA COSTA",
+      "VÍTOR HUGO DE CARVALHO RIBEIRO"
+    ];
 
-    const PARSER_VERSION = 'excel-total-geral-v3';
-    const STORAGE_KEY = 'dashboardCorporativo.history.v3';
-    const MAX_HISTORY_ITEMS = 20;
-
-    const TECH_NAME_BY_LOGIN = {
-      Z132322: 'Lailson',
-      Z132323: 'Apolinario',
-      Z164141: 'Izidoro',
-      Z247088: 'Matheus Henrique',
-      Z367110: 'Alex Emidio',
-      Z445950: 'Mateus Reis',
-      Z450037: 'José Francisco'
+    const state = {
+      technicians: [],
+      dates: [],
+      rows: [],
+      displayNames: new Map(),
+      manualAssignments: {},
+      manualRemovals: {},
+      manualCompensatoryOffs: {},
+      saturdayOverrides: {},
+      compensatoryOffDates: [],
+      compensatoryOffAssignments: {},
+      editingOffDay: null,
+      activeFilter: "todos"
     };
 
-    let globalData = null;
-    let currentHash = null;
-    let currentHistoryId = null;
-    let activeIndicatorName = null;
-    let indicatorPanelFilter = '';
-    let rankingIndicatorName = null;
+    const els = {
+      month: document.getElementById("scheduleMonth"),
+      thead: document.querySelector("#scheduleTable thead"),
+      tbody: document.querySelector("#scheduleTable tbody"),
+      sundayDutyTotal: document.getElementById("sundayDutyTotal"),
+      groupATotal: document.getElementById("groupATotal"),
+      groupBTotal: document.getElementById("groupBTotal"),
+      filterButtons: document.querySelectorAll("[data-filter]"),
+      generalViewBtn: document.getElementById("generalViewBtn"),
+      sundayOffBtn: document.getElementById("sundayOffBtn"),
+      techModal: document.getElementById("techModal"),
+      techNameInput: document.getElementById("techNameInput"),
+      techGroupInput: document.getElementById("techGroupInput"),
+      techList: document.getElementById("techList"),
+      dutyModal: document.getElementById("dutyModal"),
+      dutyDateInput: document.getElementById("dutyDateInput"),
+      dutyTechInput: document.getElementById("dutyTechInput"),
+      removeDutyBtn: document.getElementById("removeDutyBtn"),
+      currentDutyList: document.getElementById("currentDutyList"),
+      offDateModal: document.getElementById("offDateModal"),
+      offDateInput: document.getElementById("offDateInput"),
+      offDateInfo: document.getElementById("offDateInfo")
+    };
 
-    const fileInput = document.getElementById('fileInput');
-    const clearBtn = document.getElementById('clearBtn');
-    const statusText = document.getElementById('statusText');
-    const searchInput = document.getElementById('searchInput');
-    const rankingIndicatorSelect = document.getElementById('rankingIndicatorSelect');
-    const rankingModeSelect = document.getElementById('rankingModeSelect');
-    const exportPdfBtn = document.getElementById('exportPdfBtn');
-    const exportImageBtn = document.getElementById('exportImageBtn');
-    const printInfo = document.getElementById('printInfo');
-    const indicatorScreen = document.getElementById('indicatorScreen');
-    const indicatorScreenContent = document.getElementById('indicatorScreenContent');
-
-    document.querySelectorAll('.tab').forEach(tab => {
-      tab.addEventListener('click', () => setActiveTab(tab.dataset.tab));
-    });
-
-    indicatorScreen.addEventListener('click', (event) => {
-      if (event.target?.dataset?.closeIndicator === 'true') {
-        closeIndicatorScreen();
-      }
-    });
-
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && indicatorScreen.classList.contains('show')) {
-        closeIndicatorScreen();
-      }
-    });
-
-    fileInput.addEventListener('change', async (event) => {
-      const file = event.target.files[0];
-      if (!file) return;
-      await handleFileUpload(file);
-    });
-
-    clearBtn.addEventListener('click', () => {
-      globalData = null;
-      currentHash = null;
-      currentHistoryId = null;
-      activeIndicatorName = null;
-      rankingIndicatorName = null;
-      indicatorPanelFilter = '';
-      fileInput.value = '';
-      setStatus('Aguardando arquivo...', '');
-      renderEmptyState();
-      renderHistory();
-    });
-
-    searchInput.addEventListener('input', () => {
-      if (globalData) renderRankingTable();
-    });
-
-    rankingIndicatorSelect.addEventListener('change', (event) => {
-      rankingIndicatorName = event.target.value || null;
-      renderRankingTable();
-    });
-
-    rankingModeSelect.addEventListener('change', () => {
-      if (globalData) renderRankingTable();
-    });
-
-    exportPdfBtn.addEventListener('click', () => {
-      if (!globalData) {
-        setStatus('Carregue uma planilha antes de gerar PDF.', 'is-warning');
-        return;
-      }
-      updatePrintInfo();
-      window.print();
-    });
-
-    exportImageBtn.addEventListener('click', async () => {
-      if (!globalData) {
-        setStatus('Carregue uma planilha antes de gerar imagem.', 'is-warning');
-        return;
-      }
-      if (typeof html2canvas === 'undefined') {
-        setStatus('Biblioteca de imagem não carregou. Verifique sua conexão.', 'is-error');
-        return;
-      }
-
-      const previousStatus = statusText.textContent;
-      setStatus('Gerando imagem...', '');
-
-      try {
-        const activeTab = document.querySelector('.tab-content.active');
-        const canvas = await html2canvas(activeTab, {
-          backgroundColor: '#f8fafc',
-          scale: 2,
-          useCORS: true
-        });
-        const link = document.createElement('a');
-        link.download = makeExportFileName('png');
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-        setStatus('✅ Imagem gerada com sucesso', 'is-success');
-      } catch (error) {
-        console.error(error);
-        setStatus('❌ Não foi possível gerar a imagem', 'is-error');
-      } finally {
-        setTimeout(() => {
-          if (globalData && statusText.textContent.includes('Imagem gerada')) {
-            setStatus(previousStatus, 'is-success');
-          }
-        }, 2200);
-      }
-    });
-
-    async function handleFileUpload(file) {
-      setStatus('Processando planilha...', '');
-
-      try {
-        const buffer = await file.arrayBuffer();
-        const hash = await sha256(buffer);
-        const workbook = XLSX.read(buffer, { type: 'array', cellDates: true });
-        const parsedData = parseWorkbook(workbook);
-        const history = getHistory();
-        const duplicate = history.find(item => item.hash === hash);
-        const now = new Date().toISOString();
-
-        parsedData.fileName = file.name;
-        parsedData.loadedAt = now;
-        parsedData.hash = hash;
-
-        globalData = parsedData;
-        currentHash = hash;
-
-        if (duplicate) {
-          const updatedEntry = {
-            ...duplicate,
-            parserVersion: PARSER_VERSION,
-            fileName: parsedData.fileName,
-            sheetName: parsedData.sheetName,
-            loadedAt: parsedData.loadedAt,
-            data: structuredCloneSafe(parsedData)
-          };
-          saveHistory([updatedEntry, ...history.filter(item => item.id !== duplicate.id)].slice(0, MAX_HISTORY_ITEMS));
-          currentHistoryId = updatedEntry.id;
-          setStatus(`⚠️ Planilha repetida reprocessada: ${file.name}`, 'is-warning');
-        } else {
-          const entry = createHistoryEntry(parsedData, hash);
-          saveHistory([entry, ...history].slice(0, MAX_HISTORY_ITEMS));
-          currentHistoryId = entry.id;
-          setStatus(`✅ ${file.name}`, 'is-success');
-        }
-
-        activeIndicatorName = null;
-        rankingIndicatorName = globalData.indicators[0]?.name || null;
-        indicatorPanelFilter = '';
-        renderDashboard();
-        renderHistory();
-      } catch (error) {
-        console.error(error);
-        setStatus(`❌ ${error.message || 'Erro ao processar a planilha'}`, 'is-error');
-      }
+    function loadNames() {
+      const saved = localStorage.getItem("escala_plantao_tecnicos");
+      state.technicians = normalizeTechnicians(saved ? JSON.parse(saved) : defaultNames.slice());
+      const savedManual = localStorage.getItem("escala_plantao_manual");
+      state.manualAssignments = savedManual ? JSON.parse(savedManual) : {};
+      const savedManualRemovals = localStorage.getItem("escala_plantao_manual_remocoes");
+      state.manualRemovals = savedManualRemovals ? JSON.parse(savedManualRemovals) : {};
+      const savedCompensatoryOffs = localStorage.getItem("escala_plantao_folgas_dom_feriados");
+      state.manualCompensatoryOffs = savedCompensatoryOffs ? JSON.parse(savedCompensatoryOffs) : {};
+      state.saturdayOverrides = {};
+      localStorage.removeItem("escala_plantao_sabados_alteracoes");
+      localStorage.removeItem("escala_plantao_sabados_trocas");
     }
 
-    function getOrderedSheetNames(workbook) {
-      const sheetNames = workbook.SheetNames || [];
-      const activeTabIndex = workbook.Workbook?.Views?.[0]?.activeTab;
-      const activeSheetName = Number.isInteger(activeTabIndex) ? sheetNames[activeTabIndex] : null;
+    function normalizeSaturdayOverrides(value) {
+      const result = {};
+      if (!value || typeof value !== "object") return result;
 
-      const orderedByDate = sheetNames
-        .map((name, index) => ({ name, index, dateScore: extractSheetDateScore(name) }))
-        .sort((a, b) => {
-          if (b.dateScore !== a.dateScore) return b.dateScore - a.dateScore;
-          return b.index - a.index;
-        })
-        .map(item => item.name);
-
-      // Usa a própria planilha como referência: se o Excel foi salvo com uma aba ativa,
-      // ela tem prioridade. Depois disso, tenta as abas com data mais recente.
-      return activeSheetName
-        ? [activeSheetName, ...orderedByDate.filter(name => name !== activeSheetName)]
-        : orderedByDate;
-    }
-
-    function extractSheetDateScore(sheetName) {
-      const compact = String(sheetName || '').replace(/\D/g, '');
-      const match = compact.match(/(\d{2})(\d{2})(\d{2})$/);
-      if (!match) return 0;
-
-      const day = Number(match[1]);
-      const month = Number(match[2]);
-      const year = 2000 + Number(match[3]);
-
-      if (day < 1 || day > 31 || month < 1 || month > 12) return 0;
-      return new Date(year, month - 1, day).getTime();
-    }
-
-    function parseWorkbook(workbook) {
-      const diagnostics = [];
-
-      for (const sheetName of getOrderedSheetNames(workbook)) {
-        const sheet = workbook.Sheets[sheetName];
-        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: true });
-
-        if (rows.length < 3) {
-          diagnostics.push(`${sheetName}: poucos dados.`);
-          continue;
-        }
-
-        let metaRowIndex = -1;
-        let headerRowIndex = -1;
-
-        for (let i = 0; i < Math.min(18, rows.length); i++) {
-          const firstCell = normalizeText(rows[i][0]);
-          const rowText = rows[i].map(normalizeText).join('|');
-
-          if (metaRowIndex === -1 && firstCell.includes('meta')) {
-            metaRowIndex = i;
-          }
-
-          if (headerRowIndex === -1 && rowText.includes('login') && (rowText.includes('tecnico') || rowText.includes('nome'))) {
-            headerRowIndex = i;
-          }
-        }
-
-        if (metaRowIndex === -1) {
-          diagnostics.push(`${sheetName}: não encontrei a linha META.`);
-          continue;
-        }
-
-        if (headerRowIndex === -1) {
-          diagnostics.push(`${sheetName}: não encontrei as colunas Login e Técnico/Nome.`);
-          continue;
-        }
-
-        const metaRow = rows[metaRowIndex];
-        const headerRow = rows[headerRowIndex];
-        const dataRows = rows.slice(headerRowIndex + 1);
-        const totalRow = dataRows.find(row => normalizeText(row[0]).includes('total'));
-
-        if (!totalRow) {
-          diagnostics.push(`${sheetName}: não encontrei a linha Total Geral.`);
-          continue;
-        }
-
-        const loginIndex = headerRow.findIndex(h => normalizeText(h) === 'login');
-        const techIndex = headerRow.findIndex(h => {
-          const cell = normalizeText(h);
-          return cell.includes('tecnico') || cell.includes('nome');
-        });
-
-        if (loginIndex === -1 || techIndex === -1) {
-          diagnostics.push(`${sheetName}: cabeçalho sem Login ou Técnico.`);
-          continue;
-        }
-
-        const indicators = [];
-
-        for (let i = 0; i < headerRow.length; i++) {
-          if (i === loginIndex || i === techIndex) continue;
-
-          const name = String(headerRow[i] ?? '').trim();
-          if (!name) continue;
-
-          const metaValue = String(metaRow[i] ?? '');
-          const meta = parseMetaValue(metaValue, name);
-          const total = parseNumericValue(totalRow[i]);
-
-          indicators.push({
-            index: i,
-            name,
-            meta: meta.value,
-            direction: meta.direction,
-            isPercent: meta.isPercent,
-            hasTarget: meta.value !== null,
-            total
+      Object.entries(value).forEach(([iso, entries]) => {
+        if (Array.isArray(entries)) {
+          const plantonists = new Set(entries);
+          result[iso] = {};
+          state.technicians.forEach(tech => {
+            result[iso][tech.name] = plantonists.has(tech.name) ? "PLANTÃO" : "FOLGA";
           });
+          return;
         }
 
-        if (indicators.length === 0) {
-          diagnostics.push(`${sheetName}: nenhum indicador encontrado.`);
-          continue;
-        }
-
-        const technicians = dataRows
-          .filter(row => !normalizeText(row[0]).includes('total'))
-          .map(row => {
-            const login = String(row[loginIndex] ?? '').trim().toUpperCase();
-            const rawName = String(row[techIndex] ?? '').trim();
-            if (!login || !rawName) return null;
-
-            const values = {};
-            indicators.forEach(indicator => {
-              values[indicator.name] = parseNumericValue(row[indicator.index]);
-            });
-
-            return {
-              login,
-              name: TECH_NAME_BY_LOGIN[login] || rawName,
-              originalName: rawName,
-              values
-            };
-          })
-          .filter(Boolean);
-
-        if (technicians.length === 0) {
-          diagnostics.push(`${sheetName}: nenhum técnico válido encontrado.`);
-          continue;
-        }
-
-        return { indicators, technicians, sheetName };
-      }
-
-      const message = diagnostics.length
-        ? `Formato inválido. ${diagnostics[0]}`
-        : 'Formato inválido. Não encontrei uma aba válida com META, Login, Técnico e Total Geral.';
-      throw new Error(message);
-    }
-
-    function parseMetaValue(value, indicatorName) {
-      const str = String(value ?? '');
-      const clean = normalizeText(str).replace(/\s/g, '');
-      const compactOriginal = str.replace(/\s/g, '');
-      const isPercent = compactOriginal.includes('%') || isLikelyPercentIndicator(indicatorName);
-
-      if (!clean || clean.includes('?')) {
-        return { value: null, direction: 'higher', isPercent };
-      }
-
-      let direction = 'higher';
-      if (clean.includes('|-') || clean.includes('menor') || clean.includes('baixo')) {
-        direction = 'lower';
-      } else if (clean.includes('|+') || clean.includes('maior') || clean.includes('alto')) {
-        direction = 'higher';
-      }
-
-      const match = compactOriginal.match(/-?\d+(?:[.,]\d+)?/);
-      if (!match) return { value: null, direction, isPercent };
-
-      return {
-        value: parseFloat(match[0].replace(',', '.')),
-        direction,
-        isPercent
-      };
-    }
-
-    function parseNumericValue(value) {
-      if (value === null || value === undefined || value === '') return null;
-      if (typeof value === 'number') return Number.isFinite(value) ? value : null;
-
-      let str = String(value)
-        .trim()
-        .replace(/%/g, '')
-        .replace(/\s/g, '');
-
-      if (!str) return null;
-
-      // A planilha de base usa números como 77.8, 99.2 e 14.3.
-      // O parser anterior removia o ponto e transformava 77.8 em 778.
-      // Esta regra preserva ponto decimal e só trata ponto como milhar quando o padrão for realmente 1.234,56.
-      const hasComma = str.includes(',');
-      const hasDot = str.includes('.');
-
-      if (hasComma && hasDot) {
-        // Padrão brasileiro com milhar + decimal: 1.234,56
-        str = str.replace(/\./g, '').replace(',', '.');
-      } else if (hasComma) {
-        // Decimal brasileiro: 77,8
-        str = str.replace(',', '.');
-      } else if (hasDot) {
-        // Mantém decimal internacional: 77.8
-        // Remove ponto somente em milhar evidente: 1.234 ou 12.345.678
-        const thousandsPattern = /^-?\d{1,3}(\.\d{3})+$/;
-        if (thousandsPattern.test(str)) {
-          str = str.replace(/\./g, '');
-        }
-      }
-
-      const num = Number.parseFloat(str);
-      return Number.isFinite(num) ? num : null;
-    }
-
-    function normalizeText(value) {
-      return String(value ?? '')
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .trim()
-        .toLowerCase();
-    }
-
-    function isLikelyPercentIndicator(indicatorName) {
-      const name = normalizeText(indicatorName);
-      return name.includes('%') ||
-        name.includes('taxa') ||
-        name.includes('adesao') ||
-        name.includes('tnps') ||
-        name.includes('ura') ||
-        name.includes('geo') ||
-        name.includes('digital') ||
-        name.includes('revisita') ||
-        name.includes('qualificada') ||
-        name.includes('toa') ||
-        name.includes('nr') ||
-        name.includes('tec');
-    }
-
-    function renderDashboard() {
-      if (!globalData) {
-        renderEmptyState();
-        return;
-      }
-
-      if (!globalData.indicators.some(ind => ind.name === activeIndicatorName)) {
-        activeIndicatorName = null;
-      }
-
-      if (!globalData.indicators.some(ind => ind.name === rankingIndicatorName)) {
-        rankingIndicatorName = globalData.indicators[0]?.name || null;
-      }
-
-      updatePrintInfo();
-      renderKPIs();
-      renderIndicatorDetails();
-      renderRankingControls();
-      renderRankingTable();
-      renderCharts();
-      renderSummary();
-    }
-
-    function renderKPIs() {
-      const container = document.getElementById('kpisContainer');
-      const comparisonBase = getComparisonBase();
-
-      const kpisHTML = globalData.indicators.map(indicator => {
-        if (indicator.total === null) return '';
-
-        const status = getTargetStatus(indicator.total, indicator);
-        const trend = getIndicatorTrend(indicator, comparisonBase);
-        const displayValue = formatIndicatorValue(indicator.total, indicator);
-        const metaText = indicator.hasTarget ? `Meta: ${formatIndicatorValue(indicator.meta, indicator)}` : 'Sem meta definida';
-
-        return `
-          <article class="kpi-card status-${status.className} ${activeIndicatorName === indicator.name ? 'is-active' : ''}" data-indicator="${escapeAttr(indicator.name)}">
-            <div>
-              <div class="kpi-name">${escapeHtml(indicator.name)}</div>
-              <div class="kpi-value">${escapeHtml(displayValue)}</div>
-              <div class="kpi-meta">${escapeHtml(metaText)}</div>
-            </div>
-            <div class="kpi-footer">
-              <span class="badge badge-${status.className}">${escapeHtml(status.label)}</span>
-              ${trend ? `<span class="trend-badge ${trend.className}" title="${escapeAttr(trend.tooltip)}">${escapeHtml(trend.label)}</span>` : '<span class="trend-badge trend-same">Sem histórico</span>'}
-            </div>
-          </article>
-        `;
-      }).join('');
-
-      container.innerHTML = kpisHTML
-        ? `<section class="kpis-grid">${kpisHTML}</section>`
-        : getEmptyStateHTML('📊', 'Nenhum indicador com total encontrado', 'Verifique se a planilha possui a linha Total Geral.');
-
-      document.querySelectorAll('.kpi-card[data-indicator]').forEach(card => {
-        card.addEventListener('click', () => {
-          const indicatorName = card.dataset.indicator || '';
-          activeIndicatorName = indicatorName;
-          indicatorPanelFilter = '';
-          renderKPIs();
-          renderIndicatorDetails();
+        if (!entries || typeof entries !== "object") return;
+        Object.entries(entries).forEach(([name, status]) => {
+          if (status !== "PLANTÃO" && status !== "FOLGA") return;
+          if (!state.technicians.some(tech => tech.name === name)) return;
+          if (!result[iso]) result[iso] = {};
+          result[iso][name] = status;
         });
       });
+
+      return result;
     }
 
-    function renderIndicatorDetails() {
-      const inlineContainer = document.getElementById('indicatorDetailsContainer');
-      if (inlineContainer) inlineContainer.innerHTML = '';
+    function normalizeTechnicians(items) {
+      const source = Array.isArray(items) ? items : [];
+      const names = source.map(item => typeof item === "string" ? item : item.name).filter(Boolean);
+      const groupSize = Math.ceil(names.length / 2);
 
-      if (!globalData || !activeIndicatorName) {
-        hideIndicatorScreen();
-        return;
-      }
-
-      const indicator = globalData.indicators.find(item => item.name === activeIndicatorName);
-      if (!indicator) {
-        hideIndicatorScreen();
-        return;
-      }
-
-      const filterQuery = normalizeText(indicatorPanelFilter);
-      const technicians = getTechniciansForIndicator(indicator, filterQuery);
-      const status = getTargetStatus(indicator.total, indicator);
-      const trend = getIndicatorTrend(indicator, getComparisonBase());
-
-      const itemsHTML = technicians.map((tech, index) => {
-        const techStatus = getTargetStatus(tech.value, indicator);
-        return `
-          <div class="indicator-tech-item">
-            <div class="indicator-tech-main">
-              <div class="tech-name">${index + 1}º ${escapeHtml(tech.name)}</div>
-              <div class="login">${escapeHtml(tech.login)}</div>
-            </div>
-            <div style="text-align:right;">
-              <div class="value-cell">${escapeHtml(formatIndicatorValue(tech.value, indicator))}</div>
-              <span class="status-badge badge-${techStatus.className}">${escapeHtml(techStatus.label)}</span>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      indicatorScreenContent.innerHTML = `
-        <div class="indicator-screen-top">
-          <button id="indicatorBackBtn" class="btn btn-secondary indicator-back-btn" type="button">← Voltar</button>
-          <div class="indicator-screen-title-wrap">
-            <div id="indicatorScreenTitle" class="indicator-screen-title">${escapeHtml(indicator.name)}</div>
-            <div class="panel-subtitle">${escapeHtml(getDirectionText(indicator))} • ${technicians.length} técnico(s)</div>
-          </div>
-          <div class="indicator-screen-actions no-print">
-            <input type="text" id="indicatorPanelFilterInput" class="field" placeholder="Filtrar por nome ou login" value="${escapeAttr(indicatorPanelFilter)}">
-          </div>
-        </div>
-        <div class="indicator-screen-body">
-          <div class="indicator-detail-grid">
-            <div class="mini-card"><strong>Total:</strong> <span class="value-cell">${escapeHtml(formatIndicatorValue(indicator.total, indicator))}</span></div>
-            <div class="mini-card"><strong>Meta:</strong> <span class="value-cell">${indicator.hasTarget ? escapeHtml(formatIndicatorValue(indicator.meta, indicator)) : '—'}</span></div>
-            <div class="mini-card"><strong>Status:</strong> <span class="status-badge badge-${status.className}">${escapeHtml(status.label)}</span></div>
-            <div class="mini-card"><strong>Comparação:</strong> ${trend ? `<span class="trend-badge ${trend.className}">${escapeHtml(trend.label)}</span>` : '<span class="trend-badge trend-same">Sem histórico</span>'}</div>
-          </div>
-          ${itemsHTML ? `<div class="indicator-tech-list">${itemsHTML}</div>` : getEmptyStateHTML('🔍', 'Nenhum técnico encontrado', 'Ajuste o filtro ou verifique os dados deste indicador.')}
-        </div>
-      `;
-
-      showIndicatorScreen();
-
-      const backButton = document.getElementById('indicatorBackBtn');
-      if (backButton) {
-        backButton.addEventListener('click', closeIndicatorScreen);
-      }
-
-      const input = document.getElementById('indicatorPanelFilterInput');
-      if (input) {
-        input.addEventListener('input', (event) => {
-          indicatorPanelFilter = event.target.value || '';
-          renderIndicatorDetails();
-        });
-        input.focus();
-        input.setSelectionRange(input.value.length, input.value.length);
-      }
-    }
-
-    function showIndicatorScreen() {
-      indicatorScreen.classList.add('show');
-      indicatorScreen.setAttribute('aria-hidden', 'false');
-      document.body.classList.add('indicator-screen-open');
-    }
-
-    function hideIndicatorScreen() {
-      indicatorScreen.classList.remove('show');
-      indicatorScreen.setAttribute('aria-hidden', 'true');
-      document.body.classList.remove('indicator-screen-open');
-      indicatorScreenContent.innerHTML = '';
-    }
-
-    function closeIndicatorScreen() {
-      activeIndicatorName = null;
-      indicatorPanelFilter = '';
-      hideIndicatorScreen();
-      if (globalData) renderKPIs();
-    }
-
-    function renderRankingControls() {
-      rankingIndicatorSelect.innerHTML = globalData.indicators
-        .map(indicator => `<option value="${escapeAttr(indicator.name)}" ${indicator.name === rankingIndicatorName ? 'selected' : ''}>${escapeHtml(indicator.name)}</option>`)
-        .join('');
-    }
-
-    function renderRankingTable() {
-      const container = document.getElementById('rankingContainer');
-
-      if (!globalData || !rankingIndicatorName) {
-        container.innerHTML = getEmptyStateHTML('📊', 'Nenhum ranking disponível', 'Carregue uma planilha para visualizar.');
-        return;
-      }
-
-      const indicator = globalData.indicators.find(item => item.name === rankingIndicatorName);
-      if (!indicator) {
-        container.innerHTML = getEmptyStateHTML('📊', 'Indicador não encontrado', 'Selecione outro indicador.');
-        return;
-      }
-
-      const query = normalizeText(searchInput.value);
-      let technicians = getTechniciansForIndicator(indicator, query);
-      const mode = rankingModeSelect.value;
-
-      if (mode === 'top10') {
-        technicians = technicians.slice(0, 10);
-      } else if (mode === 'bottom10') {
-        technicians = technicians.slice(-10).reverse();
-      }
-
-      if (technicians.length === 0) {
-        container.innerHTML = getEmptyStateHTML('🔍', 'Nenhum técnico encontrado', 'Tente buscar por outro nome ou login.');
-        return;
-      }
-
-      const rowsHTML = technicians.map((tech, index) => {
-        const status = getTargetStatus(tech.value, indicator);
-        return `
-          <tr>
-            <td><span class="rank-position">${index + 1}º</span></td>
-            <td>
-              <div class="tech-name">${escapeHtml(tech.name)}</div>
-              <div class="tech-login">${escapeHtml(tech.login)}</div>
-            </td>
-            <td><span class="value-cell">${escapeHtml(formatIndicatorValue(tech.value, indicator))}</span></td>
-            <td>${indicator.hasTarget ? `<span class="value-cell">${escapeHtml(formatIndicatorValue(indicator.meta, indicator))}</span>` : '—'}</td>
-            <td><span class="status-badge badge-${status.className}">${escapeHtml(status.label)}</span></td>
-          </tr>
-        `;
-      }).join('');
-
-      container.innerHTML = `
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Posição</th>
-                <th>Técnico</th>
-                <th>${escapeHtml(indicator.name)}</th>
-                <th>Meta</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>${rowsHTML}</tbody>
-          </table>
-        </div>
-      `;
-    }
-
-    function renderCharts() {
-      const container = document.getElementById('chartsContainer');
-
-      const chartsHTML = globalData.indicators.map(indicator => {
-        const techValues = getTechniciansForIndicator(indicator, '');
-        if (!techValues.length) return '';
-
-        const displayValues = techValues.map(tech => normalizeValueForDisplay(tech.value, indicator));
-        const maxValue = Math.max(...displayValues.filter(Number.isFinite), 0);
-
-        const barsHTML = techValues.map(tech => {
-          const displayValue = normalizeValueForDisplay(tech.value, indicator);
-          const percentage = maxValue > 0 ? Math.max(0, Math.min(100, (displayValue / maxValue) * 100)) : 0;
-          const status = getTargetStatus(tech.value, indicator);
-          const showLabel = percentage > 15;
-
-          return `
-            <div class="bar-row">
-              <div class="bar-label" title="${escapeAttr(tech.name)}">${escapeHtml(tech.name)}</div>
-              <div class="bar-track">
-                <div class="bar-fill ${status.className}" style="width: ${percentage.toFixed(2)}%;">
-                  ${showLabel ? escapeHtml(formatIndicatorValue(tech.value, indicator)) : ''}
-                </div>
-              </div>
-              <div class="bar-value">${escapeHtml(formatIndicatorValue(tech.value, indicator))}</div>
-            </div>
-          `;
-        }).join('');
-
-        const totalInfo = indicator.total !== null ? `Total: ${formatIndicatorValue(indicator.total, indicator)} | ` : '';
-        const metaInfo = indicator.hasTarget
-          ? `${totalInfo}Meta: ${formatIndicatorValue(indicator.meta, indicator)} • ${getDirectionText(indicator)}`
-          : `${totalInfo}Sem meta definida`;
-
-        return `
-          <section class="panel chart-container">
-            <div class="chart-header">
-              <h3 class="chart-title">${escapeHtml(indicator.name)}</h3>
-              <span class="chart-meta">${escapeHtml(metaInfo)}</span>
-            </div>
-            <div class="bar-chart">${barsHTML}</div>
-          </section>
-        `;
-      }).join('');
-
-      container.innerHTML = chartsHTML || getEmptyStateHTML('📈', 'Nenhum gráfico disponível', 'Carregue uma planilha com indicadores válidos.');
-    }
-
-    function renderSummary() {
-      const container = document.getElementById('summaryContainer');
-      const comparisonBase = getComparisonBase();
-      const withTotal = globalData.indicators.filter(ind => ind.total !== null);
-      const withTarget = withTotal.filter(ind => ind.hasTarget);
-      const achieved = withTarget.filter(ind => getTargetStatus(ind.total, ind).className === 'success');
-      const failed = withTarget.filter(ind => getTargetStatus(ind.total, ind).className === 'danger');
-      const noTarget = withTotal.length - withTarget.length;
-      const improved = withTotal.filter(ind => getIndicatorTrend(ind, comparisonBase)?.state === 'improved');
-      const worsened = withTotal.filter(ind => getIndicatorTrend(ind, comparisonBase)?.state === 'worsened');
-      const bestIndicator = getBestIndicator(withTarget);
-      const criticalIndicator = getCriticalIndicator(withTarget);
-      const bestTech = getTechnicianHighlight('best');
-      const attentionTech = getTechnicianHighlight('attention');
-      const achievementRate = withTarget.length ? (achieved.length / withTarget.length) * 100 : 0;
-
-      container.innerHTML = `
-        <section class="summary-grid">
-          <div class="summary-card">
-            <div class="summary-label">Metas atingidas</div>
-            <div class="summary-value" style="color: var(--success);">${achieved.length}/${withTarget.length}</div>
-            <div class="summary-note">${formatNumber(achievementRate, 1)}% dos indicadores com meta</div>
-          </div>
-          <div class="summary-card">
-            <div class="summary-label">Abaixo/fora da meta</div>
-            <div class="summary-value" style="color: var(--danger);">${failed.length}</div>
-            <div class="summary-note">Indicadores que pedem atenção</div>
-          </div>
-          <div class="summary-card">
-            <div class="summary-label">Melhoraram</div>
-            <div class="summary-value" style="color: var(--success);">${improved.length}</div>
-            <div class="summary-note">Comparado com a base anterior</div>
-          </div>
-          <div class="summary-card">
-            <div class="summary-label">Pioraram</div>
-            <div class="summary-value" style="color: var(--danger);">${worsened.length}</div>
-            <div class="summary-note">Comparado com a base anterior</div>
-          </div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-header">
-            <div>
-              <h2 class="panel-title">Resumo Executivo</h2>
-              <div class="panel-subtitle">Base: ${escapeHtml(globalData.fileName || 'Base carregada')} • Aba: ${escapeHtml(globalData.sheetName || '—')} ${comparisonBase ? `• Comparando com: ${escapeHtml(comparisonBase.fileName)}` : '• Sem base anterior para comparação'}</div>
-            </div>
-          </div>
-
-          <div class="summary-grid">
-            <div class="mini-card">
-              <strong>Melhor indicador:</strong><br>
-              ${bestIndicator ? `${escapeHtml(bestIndicator.name)} <span class="value-cell">${escapeHtml(formatIndicatorValue(bestIndicator.total, bestIndicator))}</span>` : '—'}
-            </div>
-            <div class="mini-card">
-              <strong>Indicador crítico:</strong><br>
-              ${criticalIndicator ? `${escapeHtml(criticalIndicator.name)} <span class="value-cell">${escapeHtml(formatIndicatorValue(criticalIndicator.total, criticalIndicator))}</span>` : '—'}
-            </div>
-            <div class="mini-card">
-              <strong>Técnico destaque:</strong><br>
-              ${bestTech ? `${escapeHtml(bestTech.name)} <span class="summary-note">${bestTech.achieved}/${bestTech.total} metas</span>` : '—'}
-            </div>
-            <div class="mini-card">
-              <strong>Precisa atenção:</strong><br>
-              ${attentionTech ? `${escapeHtml(attentionTech.name)} <span class="summary-note">${attentionTech.achieved}/${attentionTech.total} metas</span>` : '—'}
-            </div>
-            <div class="mini-card">
-              <strong>Sem meta definida:</strong><br>
-              <span class="value-cell">${noTarget}</span> indicador(es)
-            </div>
-            <div class="mini-card">
-              <strong>Total de técnicos:</strong><br>
-              <span class="value-cell">${globalData.technicians.length}</span>
-            </div>
-          </div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-header">
-            <div>
-              <h2 class="panel-title">Indicadores com status</h2>
-              <div class="panel-subtitle">Visão rápida para reunião de acompanhamento.</div>
-            </div>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Indicador</th>
-                  <th>Total</th>
-                  <th>Meta</th>
-                  <th>Status</th>
-                  <th>Comparação</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${withTotal.map(indicator => {
-                  const status = getTargetStatus(indicator.total, indicator);
-                  const trend = getIndicatorTrend(indicator, comparisonBase);
-                  return `
-                    <tr>
-                      <td>${escapeHtml(indicator.name)}</td>
-                      <td><span class="value-cell">${escapeHtml(formatIndicatorValue(indicator.total, indicator))}</span></td>
-                      <td>${indicator.hasTarget ? `<span class="value-cell">${escapeHtml(formatIndicatorValue(indicator.meta, indicator))}</span>` : '—'}</td>
-                      <td><span class="status-badge badge-${status.className}">${escapeHtml(status.label)}</span></td>
-                      <td>${trend ? `<span class="trend-badge ${trend.className}">${escapeHtml(trend.label)}</span>` : '<span class="trend-badge trend-same">Sem histórico</span>'}</td>
-                    </tr>
-                  `;
-                }).join('')}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      `;
-    }
-
-    function renderHistory() {
-      const container = document.getElementById('historyContainer');
-      const history = getHistory();
-
-      if (!history.length) {
-        container.innerHTML = getEmptyStateHTML('🗂️', 'Nenhum histórico salvo', 'Carregue uma planilha para criar a primeira base local.');
-        return;
-      }
-
-      container.innerHTML = `
-        <div class="history-list">
-          ${history.map((item, index) => {
-            const isCurrent = item.id === currentHistoryId || item.hash === currentHash;
-            const totalIndicators = item.data?.indicators?.length || 0;
-            const totalTechs = item.data?.technicians?.length || 0;
-            return `
-              <article class="history-item ${isCurrent ? 'is-current' : ''}" data-history-id="${escapeAttr(item.id)}">
-                <div class="history-title">${index + 1}. ${escapeHtml(item.fileName || 'Base sem nome')}</div>
-                <div class="history-meta">${escapeHtml(formatDateTime(item.loadedAt))}</div>
-                <div class="history-meta">Aba: ${escapeHtml(item.sheetName || '—')}</div>
-                <div>
-                  <span class="badge badge-neutral">${totalIndicators} indicadores</span>
-                  <span class="badge badge-neutral">${totalTechs} técnicos</span>
-                  ${isCurrent ? '<span class="badge badge-success">Atual</span>' : ''}
-                </div>
-              </article>
-            `;
-          }).join('')}
-        </div>
-      `;
-
-      container.querySelectorAll('.history-item[data-history-id]').forEach(item => {
-        item.addEventListener('click', () => loadHistoryItem(item.dataset.historyId));
-      });
-    }
-
-    function loadHistoryItem(id) {
-      const history = getHistory();
-      const item = history.find(entry => entry.id === id);
-      if (!item) {
-        setStatus('❌ Base do histórico não encontrada', 'is-error');
-        return;
-      }
-
-      globalData = structuredCloneSafe(item.data);
-      globalData.fileName = item.fileName;
-      globalData.loadedAt = item.loadedAt;
-      globalData.hash = item.hash;
-      currentHash = item.hash;
-      currentHistoryId = item.id;
-      activeIndicatorName = null;
-      rankingIndicatorName = globalData.indicators[0]?.name || null;
-      indicatorPanelFilter = '';
-      fileInput.value = '';
-      setStatus(`✅ Base carregada: ${item.fileName}`, 'is-success');
-      renderDashboard();
-      renderHistory();
-      setActiveTab('overview');
-    }
-
-    function getTechniciansForIndicator(indicator, filterQuery) {
-      const normalizedFilter = normalizeText(filterQuery || '');
-
-      return globalData.technicians
-        .map(tech => ({
-          ...tech,
-          value: tech.values[indicator.name]
-        }))
-        .filter(tech => {
-          if (tech.value === null || tech.value === undefined || !Number.isFinite(Number(tech.value))) return false;
-          if (!normalizedFilter) return true;
-          return normalizeText(tech.name).includes(normalizedFilter) || normalizeText(tech.login).includes(normalizedFilter);
+      return source
+        .map((item, index) => {
+          const name = (typeof item === "string" ? item : item.name || "").trim().replace(/\s+/g, " ").toUpperCase();
+          if (!name) return null;
+          const savedGroup = typeof item === "object" && item.group ? String(item.group).toUpperCase() : "";
+          const group = savedGroup === "A" || savedGroup === "B" ? savedGroup : (index < groupSize ? "A" : "B");
+          return { name, group };
         })
-        .sort((a, b) => {
-          const av = normalizeValueForDisplay(a.value, indicator);
-          const bv = normalizeValueForDisplay(b.value, indicator);
-          return indicator.direction === 'lower' ? av - bv : bv - av;
-        });
+        .filter(Boolean);
     }
 
-    function getTargetStatus(value, indicator) {
-      if (value === null || value === undefined || !indicator?.hasTarget) {
-        return { className: 'warning', label: 'SEM META' };
+    function technicianNames() {
+      return state.technicians.map(tech => tech.name);
+    }
+
+    function saveNames() {
+      localStorage.setItem("escala_plantao_tecnicos", JSON.stringify(state.technicians));
+    }
+
+    function saveManualAssignments() {
+      localStorage.setItem("escala_plantao_manual", JSON.stringify(state.manualAssignments));
+    }
+
+    function saveManualRemovals() {
+      localStorage.setItem("escala_plantao_manual_remocoes", JSON.stringify(state.manualRemovals));
+    }
+
+    function saveManualCompensatoryOffs() {
+      localStorage.setItem("escala_plantao_folgas_dom_feriados", JSON.stringify(state.manualCompensatoryOffs));
+    }
+
+    function saveSaturdayOverrides() {
+      localStorage.removeItem("escala_plantao_sabados_alteracoes");
+      localStorage.removeItem("escala_plantao_sabados_trocas");
+    }
+
+    function groupCountsWithChange(name, targetGroup, includeNew = false) {
+      const counts = { A: 0, B: 0 };
+
+      state.technicians.forEach(tech => {
+        const group = tech.name === name ? targetGroup : tech.group;
+        if (group === "A" || group === "B") counts[group] += 1;
+      });
+
+      if (includeNew && (targetGroup === "A" || targetGroup === "B")) {
+        counts[targetGroup] += 1;
       }
 
-      const current = normalizeValueForDisplay(value, indicator);
-      const target = normalizeValueForDisplay(indicator.meta, indicator);
-      const achieved = indicator.direction === 'lower' ? current <= target : current >= target;
-
-      if (achieved) return { className: 'success', label: 'ATINGIDO' };
-      return { className: 'danger', label: indicator.direction === 'lower' ? 'ACIMA' : 'ABAIXO' };
+      return counts;
     }
 
-    function getDirectionText(indicator) {
-      return indicator.direction === 'lower' ? 'Quanto menor, melhor' : 'Quanto maior, melhor';
+    function groupCountsAfterRemoval(name) {
+      const counts = { A: 0, B: 0 };
+
+      state.technicians.forEach(tech => {
+        if (tech.name === name) return;
+        if (tech.group === "A" || tech.group === "B") counts[tech.group] += 1;
+      });
+
+      return counts;
     }
 
-    function getIndicatorTrend(indicator, comparisonBase) {
-      if (!comparisonBase || indicator.total === null) return null;
-      const previousIndicator = comparisonBase.data?.indicators?.find(item => item.name === indicator.name);
-      if (!previousIndicator || previousIndicator.total === null || previousIndicator.total === undefined) return null;
+    function groupDifferenceIsAllowed(counts) {
+      return Math.abs(counts.A - counts.B) <= 1;
+    }
 
-      const current = normalizeValueForDisplay(indicator.total, indicator);
-      const previous = normalizeValueForDisplay(previousIndicator.total, indicator);
-      const diff = current - previous;
-      const absDiff = Math.abs(diff);
+    function showGroupBalanceAlert(counts) {
+      window.alert(`Os grupos precisam ficar equilibrados. Grupo A: ${counts.A}. Grupo B: ${counts.B}. A diferença máxima permitida é de 1 técnico.`);
+    }
 
-      if (!Number.isFinite(diff)) return null;
-      if (absDiff < 0.000001) {
-        return {
-          state: 'same',
-          className: 'trend-same',
-          label: '→ Igual',
-          tooltip: `Anterior: ${formatIndicatorValue(previousIndicator.total, indicator)}`
-        };
+    function technicianDisplayName(name) {
+      return state.displayNames.get(name) || name;
+    }
+
+    function promptSwapPartner(tech, targetGroup) {
+      const candidates = state.technicians.filter(item => item.group === targetGroup && item.name !== tech.name);
+      if (!candidates.length) {
+        window.alert(`Não há técnico no Grupo ${targetGroup} para trocar com ${technicianDisplayName(tech.name)}.`);
+        return null;
       }
 
-      const improved = indicator.direction === 'lower' ? diff < 0 : diff > 0;
-      const formattedDiff = formatDiffValue(diff, indicator);
+      const options = candidates
+        .map((item, index) => `${index + 1}. ${technicianDisplayName(item.name)} (${item.name})`)
+        .join("\n");
+      const answer = window.prompt(
+        `${technicianDisplayName(tech.name)} está no Grupo ${tech.group}.\n` +
+        `Para mudar para o Grupo ${targetGroup}, informe quem do Grupo ${targetGroup} vai trocar:\n\n${options}`
+      );
 
-      return {
-        state: improved ? 'improved' : 'worsened',
-        className: improved ? 'trend-improved' : 'trend-worsened',
-        label: improved ? `▲ Melhorou ${formattedDiff}` : `▼ Piorou ${formattedDiff}`,
-        tooltip: `Anterior: ${formatIndicatorValue(previousIndicator.total, indicator)} | Atual: ${formatIndicatorValue(indicator.total, indicator)}`
-      };
-    }
+      if (answer === null) return null;
+      const cleanAnswer = answer.trim().replace(/\s+/g, " ").toUpperCase();
+      if (!cleanAnswer) return null;
 
-    function formatDiffValue(diff, indicator) {
-      const sign = diff > 0 ? '+' : '';
-      if (indicator.isPercent) return `${sign}${formatNumber(diff, 1)} p.p.`;
-      return `${sign}${formatNumber(diff, Math.abs(diff) >= 10 ? 0 : 2)}`;
-    }
-
-    function normalizeValueForDisplay(value, indicator) {
-      if (value === null || value === undefined) return null;
-      const number = Number(value);
-      if (!Number.isFinite(number)) return null;
-
-      if (!indicator?.isPercent) return number;
-
-      const abs = Math.abs(number);
-
-      // Usa a planilha como base: valores como 77.8, 99.2 e 14.3 já significam 77,8%, 99,2% e 14,3%.
-      // Só converte quando o Excel entregar percentual em formato fracionário, como 0.778 para 77,8%.
-      if (abs > 0 && abs <= 1) return number * 100;
-
-      return number;
-    }
-
-    function formatIndicatorValue(value, indicator) {
-      const normalized = normalizeValueForDisplay(value, indicator);
-      if (normalized === null) return '—';
-
-      if (indicator?.isPercent) {
-        return `${formatNumber(normalized, 1)}%`;
+      const selectedIndex = Number(cleanAnswer);
+      if (Number.isInteger(selectedIndex) && selectedIndex >= 1 && selectedIndex <= candidates.length) {
+        return candidates[selectedIndex - 1];
       }
 
-      if (Math.abs(normalized % 1) > 0.000001) {
-        return formatNumber(normalized, 2);
-      }
-
-      return formatNumber(normalized, 0);
+      return candidates.find(item =>
+        item.name === cleanAnswer || technicianDisplayName(item.name).toUpperCase() === cleanAnswer
+      ) || null;
     }
 
-    function formatNumber(value, digits) {
-      return Number(value).toLocaleString('pt-BR', {
-        minimumFractionDigits: digits,
-        maximumFractionDigits: digits
+    function changeTechnicianGroup(name, targetGroup) {
+      if (targetGroup !== "A" && targetGroup !== "B") return false;
+
+      const tech = state.technicians.find(item => item.name === name);
+      if (!tech) return false;
+      if (tech.group === targetGroup) return true;
+
+      const previousGroup = tech.group;
+      const partner = promptSwapPartner(tech, targetGroup);
+      if (!partner) {
+        window.alert("Troca cancelada. Informe um técnico válido do outro grupo para concluir a alteração.");
+        return false;
+      }
+
+      tech.group = targetGroup;
+      partner.group = previousGroup;
+      state.saturdayOverrides = {};
+      saveNames();
+      saveSaturdayOverrides();
+      generateSchedule();
+      renderTechnicianList();
+      return true;
+    }
+
+    function addTechnician() {
+      const cleanName = els.techNameInput.value.trim().replace(/\s+/g, " ").toUpperCase();
+      if (!cleanName) return;
+
+      if (state.technicians.some(existing => existing.name.toUpperCase() === cleanName)) {
+        window.alert("Esse técnico já está cadastrado.");
+        return;
+      }
+
+      const group = els.techGroupInput.value;
+      const counts = groupCountsWithChange(cleanName, group, true);
+      if (!groupDifferenceIsAllowed(counts)) {
+        showGroupBalanceAlert(counts);
+        return;
+      }
+
+      state.technicians.push({ name: cleanName, group });
+      els.techNameInput.value = "";
+      saveNames();
+      generateSchedule();
+      renderTechnicianList();
+      els.techNameInput.focus();
+    }
+
+    function removeTechnician(index) {
+      const tech = state.technicians[index];
+      if (!tech) return;
+
+      const counts = groupCountsAfterRemoval(tech.name);
+      if (!groupDifferenceIsAllowed(counts)) {
+        showGroupBalanceAlert(counts);
+        return;
+      }
+
+      state.technicians.splice(index, 1);
+      state.saturdayOverrides = {};
+      saveNames();
+      saveSaturdayOverrides();
+      generateSchedule();
+      renderTechnicianList();
+    }
+
+    function openTechnicianModal() {
+      renderTechnicianList();
+      els.techModal.classList.add("open");
+      els.techModal.setAttribute("aria-hidden", "false");
+      setTimeout(() => els.techNameInput.focus(), 0);
+    }
+
+    function closeTechnicianModal() {
+      els.techModal.classList.remove("open");
+      els.techModal.setAttribute("aria-hidden", "true");
+    }
+
+    function renderTechnicianList() {
+      els.techList.innerHTML = "";
+      state.technicians.forEach((tech, index) => {
+        const li = document.createElement("li");
+        li.className = "tech-item";
+
+        const name = document.createElement("strong");
+        name.textContent = state.displayNames.get(tech.name) || tech.name;
+
+        const group = createGroupSelect(tech.name, tech.group);
+
+        const remove = document.createElement("button");
+        remove.className = "small danger";
+        remove.type = "button";
+        remove.textContent = "Remover";
+        remove.addEventListener("click", () => removeTechnician(index));
+
+        li.append(name, group, remove);
+        els.techList.appendChild(li);
       });
     }
 
-    function getBestIndicator(indicators) {
-      return indicators
-        .filter(ind => ind.total !== null)
-        .map(ind => ({ ...ind, gap: getGapPercent(ind) }))
-        .sort((a, b) => b.gap - a.gap)[0] || null;
+    function interleavedTechnicianNames() {
+      const groupA = state.technicians.filter(tech => tech.group === "A").map(tech => tech.name);
+      const groupB = state.technicians.filter(tech => tech.group === "B").map(tech => tech.name);
+      const mixed = [];
+      const max = Math.max(groupA.length, groupB.length);
+
+      for (let index = 0; index < max; index += 1) {
+        if (groupA[index]) mixed.push(groupA[index]);
+        if (groupB[index]) mixed.push(groupB[index]);
+      }
+
+      return mixed;
     }
 
-    function getCriticalIndicator(indicators) {
-      return indicators
-        .filter(ind => ind.total !== null)
-        .map(ind => ({ ...ind, gap: getGapPercent(ind) }))
-        .sort((a, b) => a.gap - b.gap)[0] || null;
+    function openDutyModal() {
+      renderDutyOptions();
+      els.dutyModal.classList.add("open");
+      els.dutyModal.setAttribute("aria-hidden", "false");
     }
 
-    function getGapPercent(indicator) {
-      if (!indicator.hasTarget || indicator.total === null) return 0;
-      const total = normalizeValueForDisplay(indicator.total, indicator);
-      const meta = normalizeValueForDisplay(indicator.meta, indicator);
-      const divisor = Math.abs(meta || 1);
-      return indicator.direction === 'lower'
-        ? ((meta - total) / divisor) * 100
-        : ((total - meta) / divisor) * 100;
+    function closeDutyModal() {
+      els.dutyModal.classList.remove("open");
+      els.dutyModal.setAttribute("aria-hidden", "true");
     }
 
-    function getTechnicianHighlight(type) {
-      if (!globalData) return null;
-      const targetIndicators = globalData.indicators.filter(ind => ind.hasTarget);
-      if (!targetIndicators.length) return null;
+    function eligibleDutyDates() {
+      return state.dates.filter(dateInfo => dateInfo.weekday !== 6 && isSundayOrHoliday(dateInfo));
+    }
 
-      const scored = globalData.technicians.map(tech => {
-        let achieved = 0;
-        let total = 0;
-        let score = 0;
+    function renderDutyOptions() {
+      const selectedDate = els.dutyDateInput.value;
+      const selectedTech = els.dutyTechInput.value;
+      const dutyDates = eligibleDutyDates();
 
-        targetIndicators.forEach(indicator => {
-          const value = tech.values[indicator.name];
-          if (value === null || value === undefined) return;
+      els.dutyDateInput.innerHTML = "";
+      dutyDates.forEach(dateInfo => {
+        const option = document.createElement("option");
+        const [year, month, day] = dateInfo.iso.split("-");
+        option.value = dateInfo.iso;
+        option.textContent = `${day}/${month}/${year} - ${dateInfo.label}`;
+        els.dutyDateInput.appendChild(option);
+      });
 
-          total += 1;
-          const status = getTargetStatus(value, indicator);
-          if (status.className === 'success') achieved += 1;
+      if (dutyDates.some(dateInfo => dateInfo.iso === selectedDate)) {
+        els.dutyDateInput.value = selectedDate;
+      }
 
-          const current = normalizeValueForDisplay(value, indicator);
-          const meta = normalizeValueForDisplay(indicator.meta, indicator);
-          if (current !== null && meta !== null) {
-            score += indicator.direction === 'lower'
-              ? (meta / Math.max(current, 0.000001))
-              : (current / Math.max(meta, 0.000001));
+      els.dutyTechInput.innerHTML = "";
+      state.rows.forEach(row => {
+        const option = document.createElement("option");
+        option.value = row.name;
+        option.textContent = `${row.displayName} - Grupo ${row.group}`;
+        els.dutyTechInput.appendChild(option);
+      });
+
+      if (state.rows.some(row => row.name === selectedTech)) {
+        els.dutyTechInput.value = selectedTech;
+      }
+
+      const hasOptions = dutyDates.length > 0 && state.rows.length > 0;
+      els.dutyDateInput.disabled = !hasOptions;
+      els.dutyTechInput.disabled = !hasOptions;
+      document.getElementById("saveDutyBtn").disabled = !hasOptions;
+      els.removeDutyBtn.disabled = !hasOptions;
+      renderCurrentDutyList();
+    }
+
+    function currentDutyRowsForDate(iso = els.dutyDateInput.value) {
+      if (!iso) return [];
+      return state.rows.filter(row => row.assignments[iso] === "PLANTÃO");
+    }
+
+    function renderCurrentDutyList() {
+      els.currentDutyList.innerHTML = "";
+      const iso = els.dutyDateInput.value;
+      const dutyRows = currentDutyRowsForDate(iso);
+
+      if (!iso || !dutyRows.length) {
+        const emptyItem = document.createElement("li");
+        emptyItem.className = "hint";
+        emptyItem.textContent = "Nenhum plantonista lançado nesta data.";
+        els.currentDutyList.appendChild(emptyItem);
+        return;
+      }
+
+      dutyRows.forEach(row => {
+        const li = document.createElement("li");
+        li.className = "tech-item";
+
+        const name = document.createElement("strong");
+        name.textContent = row.displayName;
+        name.title = row.name;
+
+        const group = document.createElement("span");
+        group.className = "badge";
+        group.textContent = `Grupo ${row.group}`;
+
+        const remove = document.createElement("button");
+        remove.className = "small danger";
+        remove.type = "button";
+        remove.textContent = "Retirar";
+        remove.addEventListener("click", () => removeManualDuty(iso, row.name));
+
+        li.append(name, group, remove);
+        els.currentDutyList.appendChild(li);
+      });
+    }
+
+    function defaultDutyNamesForDate(iso) {
+      const dateInfo = state.dates.find(date => date.iso === iso);
+      if (!dateInfo || dateInfo.weekday === 6 || !isSundayOrHoliday(dateInfo)) return [];
+
+      const dutyRotationNames = interleavedTechnicianNames();
+      if (!dutyRotationNames.length) return [];
+
+      const { year, month } = monthParts();
+      const dutyOffset = dutyStartIndex(year, month, dutyRotationNames.length);
+      const dutyIndex = eligibleDutyDates().findIndex(date => date.iso === iso);
+      if (dutyIndex < 0) return [];
+
+      return rotate(dutyRotationNames, dutyOffset + dutyIndex).slice(0, 1);
+    }
+
+    function cleanNameFromDateMap(map, iso, name) {
+      if (!map[iso]) return;
+      map[iso] = map[iso].filter(item => item !== name);
+      if (!map[iso].length) delete map[iso];
+    }
+
+    function addNameToDateMap(map, iso, name) {
+      if (!map[iso]) map[iso] = [];
+      if (!map[iso].includes(name)) map[iso].push(name);
+    }
+
+    function addManualDuty() {
+      const iso = els.dutyDateInput.value;
+      const name = els.dutyTechInput.value;
+      if (!iso || !name) return;
+
+      const alreadyAssigned = currentDutyRowsForDate(iso).some(row => row.name === name);
+      cleanNameFromDateMap(state.manualRemovals, iso, name);
+
+      if (!alreadyAssigned && !defaultDutyNamesForDate(iso).includes(name)) {
+        addNameToDateMap(state.manualAssignments, iso, name);
+      }
+
+      saveManualAssignments();
+      saveManualRemovals();
+      generateSchedule();
+      renderDutyOptions();
+    }
+
+    function removeManualDuty(isoInput, nameInput) {
+      const iso = isoInput || els.dutyDateInput.value;
+      const name = nameInput || els.dutyTechInput.value;
+      if (!iso || !name) return;
+
+      const isAssigned = currentDutyRowsForDate(iso).some(row => row.name === name);
+      if (!isAssigned) {
+        window.alert("Esse técnico não está como plantonista nessa data.");
+        return;
+      }
+
+      cleanNameFromDateMap(state.manualAssignments, iso, name);
+
+      if (defaultDutyNamesForDate(iso).includes(name)) {
+        addNameToDateMap(state.manualRemovals, iso, name);
+      } else {
+        cleanNameFromDateMap(state.manualRemovals, iso, name);
+      }
+
+      saveManualAssignments();
+      saveManualRemovals();
+      generateSchedule();
+      renderDutyOptions();
+    }
+
+    function buildDisplayNames(names) {
+      const firstSecondLabels = names.map(name => {
+        const parts = name.trim().split(/\s+/);
+        return parts.length >= 2 ? `${parts[0]} ${parts[1]}` : parts[0];
+      });
+      const counts = firstSecondLabels.reduce((map, label) => {
+        map.set(label, (map.get(label) || 0) + 1);
+        return map;
+      }, new Map());
+
+      return new Map(names.map((name, index) => {
+        const parts = name.trim().split(/\s+/);
+        const firstSecond = firstSecondLabels[index];
+        const firstLast = parts.length >= 2 ? `${parts[0]} ${parts[parts.length - 1]}` : parts[0];
+        return [name, counts.get(firstSecond) > 1 ? firstLast : firstSecond];
+      }));
+    }
+
+    function setDefaultMonth() {
+      const today = new Date();
+      els.month.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+    }
+
+    function rotate(names, start) {
+      if (!names.length) return [];
+      const offset = ((start % names.length) + names.length) % names.length;
+      return names.slice(offset).concat(names.slice(0, offset));
+    }
+
+    function monthParts() {
+      const fallback = new Date();
+      if (!els.month.value) return { year: fallback.getFullYear(), month: fallback.getMonth() + 1 };
+      const [year, month] = els.month.value.split("-").map(Number);
+      return { year, month };
+    }
+
+    function isoDate(year, month, day) {
+      return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    }
+
+    function easterDate(year) {
+      const a = year % 19;
+      const b = Math.floor(year / 100);
+      const c = year % 100;
+      const d = Math.floor(b / 4);
+      const e = b % 4;
+      const f = Math.floor((b + 8) / 25);
+      const g = Math.floor((b - f + 1) / 3);
+      const h = (19 * a + b - d - g + 15) % 30;
+      const i = Math.floor(c / 4);
+      const k = c % 4;
+      const l = (32 + 2 * e + 2 * i - h - k) % 7;
+      const m = Math.floor((a + 11 * h + 22 * l) / 451);
+      const month = Math.floor((h + l - 7 * m + 114) / 31);
+      const day = ((h + l - 7 * m + 114) % 31) + 1;
+      return new Date(year, month - 1, day);
+    }
+
+    function addDays(date, days) {
+      const copy = new Date(date);
+      copy.setDate(copy.getDate() + days);
+      return copy;
+    }
+
+    function dateToIso(date) {
+      return isoDate(date.getFullYear(), date.getMonth() + 1, date.getDate());
+    }
+
+    function parseIsoDate(iso) {
+      const [year, month, day] = iso.split("-").map(Number);
+      return new Date(year, month - 1, day);
+    }
+
+    function nextMondayAfter(iso) {
+      const date = parseIsoDate(iso);
+      const weekday = date.getDay();
+      const daysUntilMonday = weekday === 0 ? 1 : (8 - weekday);
+      return addDays(date, daysUntilMonday);
+    }
+
+    function shortDate(iso) {
+      const [year, month, day] = iso.split("-");
+      return `${day}/${month}/${year}`;
+    }
+
+    function holidayMap(year) {
+      const easter = easterDate(year);
+      return new Map([
+        [isoDate(year, 1, 1), "Confraternização Universal"],
+        [dateToIso(addDays(easter, -2)), "Sexta-feira Santa"],
+        [isoDate(year, 4, 21), "Tiradentes"],
+        [isoDate(year, 5, 1), "Dia do Trabalhador"],
+        [dateToIso(addDays(easter, 60)), "Corpus Christi"],
+        [isoDate(year, 8, 16), "Aniversário de Teresina"],
+        [isoDate(year, 9, 7), "Independência do Brasil"],
+        [isoDate(year, 10, 12), "Nossa Senhora Aparecida"],
+        [isoDate(year, 10, 19), "Dia do Piauí"],
+        [isoDate(year, 11, 2), "Finados"],
+        [isoDate(year, 11, 15), "Proclamação da República"],
+        [isoDate(year, 11, 20), "Consciência Negra"],
+        [isoDate(year, 12, 8), "Nossa Senhora da Conceição"],
+        [isoDate(year, 12, 25), "Natal"]
+      ]);
+    }
+
+    function datesForMonth(year, month) {
+      const holidays = holidayMap(year);
+      const lastDay = new Date(year, month, 0).getDate();
+      const dates = [];
+
+      for (let day = 1; day <= lastDay; day += 1) {
+        const date = new Date(year, month - 1, day);
+        const iso = isoDate(year, month, day);
+        const labels = [];
+        if (date.getDay() === 6) labels.push("Sábado");
+        if (date.getDay() === 0) labels.push("Domingo");
+        const isHoliday = holidays.has(iso);
+        if (isHoliday) labels.push(holidays.get(iso));
+
+        if (labels.length) {
+          dates.push({ iso, day, weekday: date.getDay(), isHoliday, label: labels.join(" + ") });
+        }
+      }
+
+      return dates;
+    }
+
+    function countSaturdaysInMonth(year, month) {
+      const lastDay = new Date(year, month, 0).getDate();
+      let total = 0;
+
+      for (let day = 1; day <= lastDay; day += 1) {
+        if (new Date(year, month - 1, day).getDay() === 6) total += 1;
+      }
+
+      return total;
+    }
+
+    function countSundayHolidayDutiesInMonth(year, month) {
+      return datesForMonth(year, month)
+        .filter(dateInfo => dateInfo.weekday !== 6 && isSundayOrHoliday(dateInfo))
+        .length;
+    }
+
+    function monthSerial(year, month) {
+      return (year * 12) + (month - 1);
+    }
+
+    function saturdayStartParity(year, month) {
+      const baseYear = 2026;
+      const baseMonth = 1;
+      const current = monthSerial(year, month);
+      const base = monthSerial(baseYear, baseMonth);
+      let totalPreviousSaturdays = 0;
+
+      if (current >= base) {
+        for (let serial = base; serial < current; serial += 1) {
+          const itemYear = Math.floor(serial / 12);
+          const itemMonth = (serial % 12) + 1;
+          totalPreviousSaturdays += countSaturdaysInMonth(itemYear, itemMonth);
+        }
+      } else {
+        for (let serial = current; serial < base; serial += 1) {
+          const itemYear = Math.floor(serial / 12);
+          const itemMonth = (serial % 12) + 1;
+          totalPreviousSaturdays -= countSaturdaysInMonth(itemYear, itemMonth);
+        }
+      }
+
+      return ((totalPreviousSaturdays % 2) + 2) % 2;
+    }
+
+    function dutyStartIndex(year, month, rotationLength) {
+      if (!rotationLength) return 0;
+
+      const baseYear = 2026;
+      const baseMonth = 1;
+      const current = monthSerial(year, month);
+      const base = monthSerial(baseYear, baseMonth);
+      let previousDuties = 0;
+
+      if (current >= base) {
+        for (let serial = base; serial < current; serial += 1) {
+          const itemYear = Math.floor(serial / 12);
+          const itemMonth = (serial % 12) + 1;
+          previousDuties += countSundayHolidayDutiesInMonth(itemYear, itemMonth);
+        }
+      } else {
+        for (let serial = current; serial < base; serial += 1) {
+          const itemYear = Math.floor(serial / 12);
+          const itemMonth = (serial % 12) + 1;
+          previousDuties -= countSundayHolidayDutiesInMonth(itemYear, itemMonth);
+        }
+      }
+
+      return ((previousDuties % rotationLength) + rotationLength) % rotationLength;
+    }
+
+    function buildCompensatoryOffDays() {
+      const offDateMap = new Map();
+      const offAssignments = {};
+      const weekCounters = {};
+      const dutyDates = state.dates.filter(dateInfo => dateInfo.weekday !== 6 && isSundayOrHoliday(dateInfo));
+
+      dutyDates.forEach(dateInfo => {
+        const dutyRows = state.rows.filter(row => row.assignments[dateInfo.iso] === "PLANTÃO");
+        if (!dutyRows.length) return;
+
+        const weekStart = nextMondayAfter(dateInfo.iso);
+        const weekStartIso = dateToIso(weekStart);
+        if (!weekCounters[weekStartIso]) weekCounters[weekStartIso] = 0;
+
+        dutyRows.forEach(row => {
+          const weekdayOffset = weekCounters[weekStartIso] % 5;
+          const offDate = addDays(weekStart, weekdayOffset);
+          const offIso = dateToIso(offDate);
+
+          offDateMap.set(offIso, {
+            iso: offIso,
+            day: offDate.getDate(),
+            weekday: offDate.getDay(),
+            isHoliday: false,
+            label: `Folga ref. ${shortDate(dateInfo.iso)}`
+          });
+
+          if (!offAssignments[row.name]) offAssignments[row.name] = {};
+          offAssignments[row.name][offIso] = "FOLGA";
+          weekCounters[weekStartIso] += 1;
+        });
+      });
+
+      Object.entries(state.manualCompensatoryOffs || {}).forEach(([name, dates]) => {
+        if (!state.technicians.some(tech => tech.name === name)) return;
+        if (!offAssignments[name]) offAssignments[name] = {};
+
+        Object.entries(dates || {}).forEach(([iso, value]) => {
+          const date = parseIsoDate(iso);
+          if (!offDateMap.has(iso)) {
+            offDateMap.set(iso, {
+              iso,
+              day: date.getDate(),
+              weekday: date.getDay(),
+              isHoliday: false,
+              label: "Folga ref."
+            });
+          }
+
+          if (value === "FOLGA") {
+            offAssignments[name][iso] = "FOLGA";
+          } else {
+            delete offAssignments[name][iso];
           }
         });
-
-        return {
-          name: tech.name,
-          login: tech.login,
-          achieved,
-          total,
-          score: total ? score / total : 0
-        };
-      }).filter(item => item.total > 0);
-
-      if (!scored.length) return null;
-
-      scored.sort((a, b) => {
-        if (b.achieved !== a.achieved) return b.achieved - a.achieved;
-        return b.score - a.score;
       });
 
-      return type === 'attention' ? scored[scored.length - 1] : scored[0];
+      const datesWithOff = new Set();
+      Object.values(offAssignments).forEach(assignments => {
+        Object.entries(assignments || {}).forEach(([iso, value]) => {
+          if (value === "FOLGA") datesWithOff.add(iso);
+        });
+      });
+
+      state.compensatoryOffDates = Array.from(offDateMap.values())
+        .filter(dateInfo => datesWithOff.has(dateInfo.iso))
+        .sort((a, b) => a.iso.localeCompare(b.iso));
+      state.compensatoryOffAssignments = offAssignments;
     }
 
-    function getComparisonBase() {
-      if (!currentHash) return null;
-      return getHistory().find(item => item.hash !== currentHash) || null;
+    function generateSchedule() {
+      const names = technicianNames();
+      const dutyRotationNames = interleavedTechnicianNames();
+      state.displayNames = buildDisplayNames(names);
+      const dutyCount = 1;
+      const { year, month } = monthParts();
+      state.dates = datesForMonth(year, month);
+      const saturdayOffset = saturdayStartParity(year, month);
+      const dutyOffset = dutyStartIndex(year, month, dutyRotationNames.length);
+
+      state.rows = state.technicians.map(tech => ({
+        name: tech.name,
+        displayName: state.displayNames.get(tech.name) || tech.name,
+        group: tech.group,
+        assignments: {}
+      }));
+
+      let saturdayIndex = 0;
+      let dutyDateIndex = 0;
+
+      state.dates.forEach(dateInfo => {
+        const isSaturday = dateInfo.weekday === 6;
+        const isDutyDate = dateInfo.weekday === 0 || dateInfo.isHoliday;
+        const countForDate = isSaturday ? Math.ceil(names.length / 2) : dutyCount;
+        const selected = new Set();
+
+        if (isSaturday) {
+          const activeGroup = (saturdayOffset + saturdayIndex) % 2 === 0 ? "A" : "B";
+          const groupRows = state.rows.filter(row => row.group === activeGroup);
+          groupRows.forEach(row => selected.add(row.name));
+        } else if (isDutyDate) {
+          const rotated = rotate(dutyRotationNames, dutyOffset + (dutyDateIndex * dutyCount));
+          rotated.slice(0, countForDate).forEach(name => selected.add(name));
+        }
+
+        (state.manualAssignments[dateInfo.iso] || []).forEach(name => selected.add(name));
+        (state.manualRemovals[dateInfo.iso] || []).forEach(name => selected.delete(name));
+
+        state.rows.forEach(row => {
+          row.assignments[dateInfo.iso] = selected.has(row.name) ? "PLANTÃO" : "FOLGA";
+        });
+
+        if (isSaturday) {
+          saturdayIndex += 1;
+        } else if (isDutyDate) {
+          dutyDateIndex += 1;
+        }
+      });
+
+      buildCompensatoryOffDays();
+      saveNames();
+      render();
     }
 
-    function createHistoryEntry(data, hash) {
-      return {
-        id: `${hash.slice(0, 12)}-${Date.now()}`,
-        hash,
-        parserVersion: PARSER_VERSION,
-        fileName: data.fileName || 'Base sem nome',
-        sheetName: data.sheetName || '—',
-        loadedAt: data.loadedAt || new Date().toISOString(),
-        data: structuredCloneSafe(data)
-      };
+    function statusClass(value) {
+      if (value === "PLANTÃO") return "plantao";
+      if (value === "FOLGA") return "folga";
+      return "empty";
     }
 
-    function getHistory() {
-      try {
-        const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-        if (!Array.isArray(parsed)) return [];
-        return parsed
-          .filter(item => item && item.data && item.parserVersion === PARSER_VERSION)
-          .sort((a, b) => new Date(b.loadedAt || 0) - new Date(a.loadedAt || 0));
-      } catch (error) {
-        console.warn('Histórico local inválido:', error);
-        return [];
-      }
-    }
+    function render() {
+      updateSummaryTotals();
 
-    function saveHistory(history) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(history.slice(0, MAX_HISTORY_ITEMS)));
-      } catch (error) {
-        console.warn('Não foi possível salvar histórico:', error);
-        setStatus('⚠️ Base carregada, mas o histórico local está cheio.', 'is-warning');
-      }
-    }
-
-    async function sha256(buffer) {
-      if (!crypto?.subtle) {
-        return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-      }
-      const digest = await crypto.subtle.digest('SHA-256', buffer);
-      return Array.from(new Uint8Array(digest))
-        .map(byte => byte.toString(16).padStart(2, '0'))
-        .join('');
-    }
-
-    function initFromHistory() {
-      const history = getHistory();
-      if (!history.length) {
-        renderEmptyState();
-        renderHistory();
+      if (state.activeFilter === "folgas-dom-feriados") {
+        renderCompensatoryOffDays();
+        updateFilterButtons();
         return;
       }
 
-      const latest = history[0];
-      globalData = structuredCloneSafe(latest.data);
-      globalData.fileName = latest.fileName;
-      globalData.loadedAt = latest.loadedAt;
-      globalData.hash = latest.hash;
-      currentHash = latest.hash;
-      currentHistoryId = latest.id;
-      rankingIndicatorName = globalData.indicators[0]?.name || null;
-      setStatus(`✅ Última base carregada: ${latest.fileName}`, 'is-success');
-      renderDashboard();
-      renderHistory();
-    }
+      const visibleDates = datesForActiveFilter();
+      document.body.classList.toggle("compact-groups", state.activeFilter === "grupo-a" || state.activeFilter === "grupo-b");
+      renderHeader(visibleDates);
+      els.tbody.innerHTML = "";
 
-    function setActiveTab(tabName) {
-      document.querySelectorAll('.tab').forEach(tab => {
-        tab.classList.toggle('active', tab.dataset.tab === tabName);
+      state.rows.forEach((row, index) => {
+        if (!matchesFilter(row, visibleDates)) return;
+
+        const scaleTr = document.createElement("tr");
+        scaleTr.appendChild(cell(row.displayName, "name"));
+        scaleTr.appendChild(groupCell(row));
+
+        visibleDates.forEach(dateInfo => {
+          const value = row.assignments[dateInfo.iso] || "";
+          scaleTr.appendChild(statusCell(displayValueForFilter(value), index, dateInfo));
+        });
+
+        els.tbody.appendChild(scaleTr);
       });
-      document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.toggle('active', content.id === `${tabName}Tab`);
+
+      updateFilterButtons();
+    }
+
+    function updateSummaryTotals() {
+      let sundayDutyTotal = 0;
+
+      els.groupATotal.textContent = state.rows.filter(row => row.group === "A").length;
+      els.groupBTotal.textContent = state.rows.filter(row => row.group === "B").length;
+
+      state.rows.forEach(row => {
+        state.dates.forEach(dateInfo => {
+          const value = row.assignments[dateInfo.iso] || "";
+          if (value === "PLANTÃO" && dateInfo.weekday !== 6 && isSundayOrHoliday(dateInfo)) {
+            sundayDutyTotal += 1;
+          }
+        });
       });
+
+      els.sundayDutyTotal.textContent = sundayDutyTotal;
     }
 
-    function setStatus(message, className) {
-      statusText.textContent = message;
-      statusText.className = `status-text ${className || ''}`.trim();
+    function renderCompensatoryOffDays() {
+      const visibleDates = state.compensatoryOffDates.filter(dateInfo =>
+        state.rows.some(row => (state.compensatoryOffAssignments[row.name] || {})[dateInfo.iso] === "FOLGA")
+      );
+      document.body.classList.remove("compact-groups");
+      renderHeader(visibleDates);
+      els.tbody.innerHTML = "";
+
+      const rowsWithOff = state.rows.filter(row =>
+        visibleDates.some(dateInfo => (state.compensatoryOffAssignments[row.name] || {})[dateInfo.iso] === "FOLGA")
+      );
+
+      rowsWithOff.forEach(row => {
+        const scaleTr = document.createElement("tr");
+        scaleTr.appendChild(cell(row.displayName, "name"));
+        scaleTr.appendChild(groupCell(row));
+
+        visibleDates.forEach(dateInfo => {
+          const value = (state.compensatoryOffAssignments[row.name] || {})[dateInfo.iso] || "";
+          scaleTr.appendChild(compensatoryOffCell(value, row.name, dateInfo.iso));
+        });
+
+        els.tbody.appendChild(scaleTr);
+      });
+
+      if (!rowsWithOff.length) {
+        const tr = document.createElement("tr");
+        const td = document.createElement("td");
+        td.colSpan = Math.max(visibleDates.length + 2, 2);
+        td.className = "empty-message";
+        td.textContent = "Nenhum técnico com folga de domingos/feriados neste mês.";
+        tr.appendChild(td);
+        els.tbody.appendChild(tr);
+      }
     }
 
-    function renderEmptyState() {
-      hideIndicatorScreen();
-      const emptyHTML = getEmptyStateHTML('📊', 'Nenhum dado carregado', 'Faça upload de um arquivo Excel para visualizar os indicadores.');
-      document.getElementById('kpisContainer').innerHTML = emptyHTML;
-      document.getElementById('indicatorDetailsContainer').innerHTML = '';
-      document.getElementById('rankingContainer').innerHTML = emptyHTML;
-      document.getElementById('chartsContainer').innerHTML = emptyHTML;
-      document.getElementById('summaryContainer').innerHTML = emptyHTML;
-      rankingIndicatorSelect.innerHTML = '';
-      updatePrintInfo();
+    function datesForActiveFilter() {
+      if (state.activeFilter === "domingos") {
+        return state.dates.filter(isSundayOrHoliday);
+      }
+
+      if (state.activeFilter === "grupo-a" || state.activeFilter === "grupo-b") {
+        const targetIndexParity = state.activeFilter === "grupo-a" ? 0 : 1;
+        const { year, month } = monthParts();
+        const offset = saturdayStartParity(year, month);
+        let saturdayIndex = -1;
+        return state.dates.filter(dateInfo => {
+          if (dateInfo.weekday !== 6) return false;
+          saturdayIndex += 1;
+          return (offset + saturdayIndex) % 2 === targetIndexParity;
+        });
+      }
+
+      return state.dates;
     }
 
-    function getEmptyStateHTML(icon, title, text) {
-      return `
-        <div class="empty-state">
-          <div class="empty-icon">${escapeHtml(icon)}</div>
-          <div class="empty-title">${escapeHtml(title)}</div>
-          <div class="empty-text">${escapeHtml(text)}</div>
-        </div>
-      `;
+    function isSundayOrHoliday(dateInfo) {
+      return dateInfo.weekday === 0 || dateInfo.isHoliday;
+    }
+
+    function matchesFilter(row, visibleDates = state.dates) {
+      if (state.activeFilter === "grupo-a") {
+        return row.group === "A" || visibleDates.some(dateInfo => row.assignments[dateInfo.iso] === "PLANTÃO");
+      }
+
+      if (state.activeFilter === "grupo-b") {
+        return row.group === "B" || visibleDates.some(dateInfo => row.assignments[dateInfo.iso] === "PLANTÃO");
+      }
+
+      if (state.activeFilter === "plantoes") {
+        return visibleDates.some(dateInfo => row.assignments[dateInfo.iso] === "PLANTÃO");
+      }
+
+      if (state.activeFilter === "domingos") {
+        return visibleDates.some(dateInfo => row.assignments[dateInfo.iso] === "PLANTÃO");
+      }
+
+      return true;
+    }
+
+    function displayValueForFilter(value) {
+      if (state.activeFilter === "domingos" || state.activeFilter === "plantoes") {
+        return value === "PLANTÃO" ? value : "";
+      }
+
+      return value;
+    }
+
+    function setFilter(type) {
+      state.activeFilter = type;
+      render();
+    }
+
+    function updateFilterButtons() {
+      els.filterButtons.forEach(button => {
+        button.classList.toggle("active", button.dataset.filter === state.activeFilter);
+      });
+      const generalActive = state.activeFilter === "todos";
+      const sundayOffActive = state.activeFilter === "folgas-dom-feriados";
+      els.generalViewBtn.classList.toggle("active", generalActive);
+      els.sundayOffBtn.classList.toggle("active", sundayOffActive);
+      els.generalViewBtn.setAttribute("aria-pressed", String(generalActive));
+      els.sundayOffBtn.setAttribute("aria-pressed", String(sundayOffActive));
+    }
+
+    function renderHeader(visibleDates = state.dates) {
+      const tr = document.createElement("tr");
+      const nameTh = document.createElement("th");
+      nameTh.textContent = "TÉCNICOS";
+      tr.appendChild(nameTh);
+      const groupTh = document.createElement("th");
+      groupTh.textContent = "GRUPO";
+      tr.appendChild(groupTh);
+
+      visibleDates.forEach(dateInfo => {
+        const th = document.createElement("th");
+        const [year, month, day] = dateInfo.iso.split("-");
+        th.innerHTML = `${day}/${month}<br><small>${escapeHtml(dateInfo.label)}</small>`;
+        tr.appendChild(th);
+      });
+
+      els.thead.innerHTML = "";
+      els.thead.appendChild(tr);
+      adjustTableColumnWidths(visibleDates.length);
+    }
+
+    function adjustTableColumnWidths(dateCount = 0) {
+      const wrap = document.querySelector(".sheet-wrap");
+      const table = document.getElementById("scheduleTable");
+      if (!wrap || !table) return;
+
+      const availableWidth = Math.max(320, wrap.clientWidth - 2);
+      const groupWidth = 64;
+      const idealNameWidth = 280;
+      const minNameWidth = dateCount >= 9 ? 126 : 155;
+      const idealDateWidth = state.activeFilter === "todos" ? 108 : 112;
+      const minDateWidth = state.activeFilter === "todos" ? 68 : 76;
+
+      let dateWidth = idealDateWidth;
+      let nameWidth = availableWidth - groupWidth - (dateCount * dateWidth);
+
+      if (dateCount <= 0) {
+        nameWidth = idealNameWidth;
+      } else if (nameWidth < minNameWidth) {
+        nameWidth = minNameWidth;
+        dateWidth = Math.floor((availableWidth - groupWidth - nameWidth) / dateCount);
+        dateWidth = Math.max(minDateWidth, Math.min(idealDateWidth, dateWidth));
+
+        const totalWithMinimums = nameWidth + groupWidth + (dateCount * dateWidth);
+        if (totalWithMinimums > availableWidth) {
+          nameWidth = Math.max(104, availableWidth - groupWidth - (dateCount * dateWidth));
+        }
+      } else {
+        nameWidth = Math.min(idealNameWidth, nameWidth);
+      }
+
+      wrap.style.setProperty("--name-col", `${Math.round(nameWidth)}px`);
+      wrap.style.setProperty("--group-col", `${groupWidth}px`);
+      wrap.style.setProperty("--date-col", `${Math.round(dateWidth)}px`);
+      table.style.width = "100%";
+      table.style.maxWidth = "100%";
+    }
+
+    function cell(value, className) {
+      const td = document.createElement("td");
+      td.className = className;
+      td.textContent = value;
+      return td;
+    }
+
+    function createGroupSelect(name, currentGroup) {
+      const select = document.createElement("select");
+      select.className = "group-select";
+      select.setAttribute("aria-label", "Alterar grupo do técnico");
+
+      ["A", "B"].forEach(group => {
+        const option = document.createElement("option");
+        option.value = group;
+        option.textContent = group;
+        select.appendChild(option);
+      });
+
+      select.value = currentGroup;
+      select.addEventListener("change", event => {
+        const changed = changeTechnicianGroup(name, event.target.value);
+        if (!changed) event.target.value = currentGroup;
+      });
+
+      return select;
+    }
+
+    function groupCell(row) {
+      const td = document.createElement("td");
+      td.className = "group-cell";
+
+      if (state.activeFilter === "todos") {
+        td.appendChild(createGroupSelect(row.name, row.group));
+      } else {
+        td.textContent = row.group;
+      }
+
+      return td;
+    }
+
+    function statusCell(value, rowIndex, dateInfo) {
+      const td = cell(value, `status-cell ${statusClass(value)}`);
+      td.title = dateInfo.weekday === 6 ? "Plantão definido pela lógica dos grupos. Para trocar, altere o grupo do técnico na visão geral." : "";
+      return td;
+    }
+
+    function compensatoryOffCell(value, name, iso) {
+      const td = cell(value, `status-cell ${statusClass(value)}`);
+      td.title = value === "FOLGA" ? "Clique para escolher outro dia" : "Sem folga nesta data";
+      if (value === "FOLGA") {
+        td.classList.add("clickable-cell");
+        td.addEventListener("click", () => openOffDateModal(name, iso));
+      }
+      return td;
+    }
+
+    function openOffDateModal(name, currentIso) {
+      const row = state.rows.find(item => item.name === name);
+      const displayName = row ? row.displayName : name;
+      state.editingOffDay = { name, currentIso };
+      els.offDateInput.value = currentIso;
+      els.offDateInfo.textContent = `${displayName} - folga atual em ${shortDate(currentIso)}. Escolha o novo dia da folga.`;
+      els.offDateModal.classList.add("open");
+      els.offDateModal.setAttribute("aria-hidden", "false");
+      setTimeout(() => els.offDateInput.focus(), 0);
+    }
+
+    function closeOffDateModal() {
+      state.editingOffDay = null;
+      els.offDateModal.classList.remove("open");
+      els.offDateModal.setAttribute("aria-hidden", "true");
+    }
+
+    function findProgrammedOffOnDate(iso, ignoredName, ignoredIso) {
+      for (const row of state.rows) {
+        const hasOff = (state.compensatoryOffAssignments[row.name] || {})[iso] === "FOLGA";
+        if (!hasOff) continue;
+        if (row.name === ignoredName && iso === ignoredIso) continue;
+        return row;
+      }
+      return null;
+    }
+
+    function saveOffDateChange() {
+      if (!state.editingOffDay) return;
+      const { name, currentIso } = state.editingOffDay;
+      const selectedIso = els.offDateInput.value;
+      if (!selectedIso) return;
+
+      if (selectedIso === currentIso) {
+        closeOffDateModal();
+        return;
+      }
+
+      const selectedDate = parseIsoDate(selectedIso);
+      if (selectedDate.getDay() === 0 || selectedDate.getDay() === 6) {
+        window.alert("Escolha um dia de segunda a sexta para lançar a folga.");
+        return;
+      }
+
+      const conflictingRow = findProgrammedOffOnDate(selectedIso, name, currentIso);
+      if (conflictingRow) {
+        const displayName = conflictingRow.displayName || state.displayNames.get(conflictingRow.name) || conflictingRow.name;
+        window.alert(`Já existe folga programada em ${shortDate(selectedIso)} para ${displayName}. Escolha outra data.`);
+        return;
+      }
+
+      if (!state.manualCompensatoryOffs[name]) state.manualCompensatoryOffs[name] = {};
+      state.manualCompensatoryOffs[name][currentIso] = "";
+      state.manualCompensatoryOffs[name][selectedIso] = "FOLGA";
+      saveManualCompensatoryOffs();
+      buildCompensatoryOffDays();
+      closeOffDateModal();
+      render();
     }
 
     function escapeHtml(value) {
-      return String(value ?? '')
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
+      return String(value).replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[char]));
     }
 
-    function escapeAttr(value) {
-      return escapeHtml(value);
-    }
-
-    function formatDateTime(value) {
-      if (!value) return 'Data não informada';
-      const date = new Date(value);
-      if (Number.isNaN(date.getTime())) return 'Data inválida';
-      return date.toLocaleString('pt-BR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+    function tableHtmlForExcel() {
+      const tableClone = document.getElementById("scheduleTable").cloneNode(true);
+      tableClone.querySelectorAll("[title]").forEach(item => item.removeAttribute("title"));
+      tableClone.querySelectorAll("select.group-select").forEach(select => {
+        const td = select.closest("td");
+        if (td) td.textContent = select.value;
       });
+      const viewTitle = state.activeFilter === "folgas-dom-feriados" ? "Folgas Dom/Fer." : "Escala de Plantão";
+      const monthLabel = els.month.value ? els.month.value : "";
+
+      return `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <meta charset="utf-8">
+          <!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>${escapeHtml(viewTitle)}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->
+          <style>
+            body { font-family: Arial, Helvetica, sans-serif; color: #1b2430; }
+            .excel-title { font-size: 18px; font-weight: bold; margin-bottom: 4px; }
+            .excel-subtitle { font-size: 12px; color: #637083; margin-bottom: 12px; }
+            table { border-collapse: collapse; font-family: Arial, Helvetica, sans-serif; width: auto; }
+            th, td { border: 1px solid #aeb8c4; padding: 5px 7px; height: 28px; font-size: 11px; vertical-align: middle; }
+            th { background: #17212f; color: #ffffff; font-weight: 700; text-align: left; }
+            th:first-child, th:nth-child(2) { background: #0b2545; color: #ffffff; font-weight: 800; }
+            th small { color: #d9e0e8; font-size: 9px; font-weight: 400; }
+            td.name { width: 280px; min-width: 280px; max-width: 280px; font-weight: 700; color: #0b1f3a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            td.group-cell { width: 64px; min-width: 64px; max-width: 64px; text-align: center; font-weight: 700; color: #344256; background: #f6f8fa; }
+            td.status-cell { width: 128px; min-width: 128px; max-width: 128px; text-align: center; font-weight: 700; }
+            .plantao { background: #dff3e5; color: #176b35; }
+            .folga { background: #f9e1df; color: #9a2c25; }
+            .empty { background: #ffffff; color: #9aa4b2; }
+          </style>
+        </head>
+        <body>
+          <div class="excel-title">${escapeHtml(viewTitle)}</div>
+          <div class="excel-subtitle">Mês: ${escapeHtml(monthLabel)}</div>
+          ${tableClone.outerHTML}
+        </body>
+        </html>`;
     }
 
-    function makeExportFileName(extension) {
-      const baseName = (globalData?.fileName || 'dashboard-indicadores')
-        .replace(/\.[^.]+$/, '')
-        .replace(/[^a-z0-9_-]+/gi, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-|-$/g, '')
-        .toLowerCase() || 'dashboard-indicadores';
-      const date = new Date().toISOString().slice(0, 10);
-      return `${baseName}-${date}.${extension}`;
+    function exportExcel() {
+      const blob = new Blob([tableHtmlForExcel()], { type: "application/vnd.ms-excel;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const datePart = els.month.value ? els.month.value.replaceAll("-", "_") : "escala";
+      const viewPart = state.activeFilter === "folgas-dom-feriados" ? "Folgas-Dom-Fer" : "Escala-Plantao";
+      link.href = url;
+      link.download = `${viewPart}-${datePart}.xls`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
     }
 
-    function updatePrintInfo() {
-      if (!printInfo) return;
-      if (!globalData) {
-        printInfo.textContent = '';
-        return;
-      }
-      printInfo.textContent = `Base: ${globalData.fileName || 'Base carregada'} | Aba: ${globalData.sheetName || '—'} | Gerado em: ${formatDateTime(new Date().toISOString())}`;
-    }
+    els.month.addEventListener("change", generateSchedule);
+    document.getElementById("openDutyBtn").addEventListener("click", openDutyModal);
+    document.getElementById("generalViewBtn").addEventListener("click", () => setFilter("todos"));
+    document.getElementById("sundayOffBtn").addEventListener("click", () => setFilter("folgas-dom-feriados"));
+    document.getElementById("saveDutyBtn").addEventListener("click", addManualDuty);
+    document.getElementById("removeDutyBtn").addEventListener("click", () => removeManualDuty());
+    els.dutyDateInput.addEventListener("change", renderCurrentDutyList);
+    els.dutyTechInput.addEventListener("change", renderCurrentDutyList);
+    document.getElementById("closeDutyModalBtn").addEventListener("click", closeDutyModal);
+    document.getElementById("doneDutyModalBtn").addEventListener("click", closeDutyModal);
+    els.dutyModal.addEventListener("click", event => {
+      if (event.target === els.dutyModal) closeDutyModal();
+    });
+    document.getElementById("saveOffDateBtn").addEventListener("click", saveOffDateChange);
+    document.getElementById("closeOffDateModalBtn").addEventListener("click", closeOffDateModal);
+    document.getElementById("cancelOffDateBtn").addEventListener("click", closeOffDateModal);
+    els.offDateModal.addEventListener("click", event => {
+      if (event.target === els.offDateModal) closeOffDateModal();
+    });
+    document.getElementById("addTechBtn").addEventListener("click", openTechnicianModal);
+    document.getElementById("saveTechBtn").addEventListener("click", addTechnician);
+    document.getElementById("closeTechModalBtn").addEventListener("click", closeTechnicianModal);
+    document.getElementById("doneTechModalBtn").addEventListener("click", closeTechnicianModal);
+    els.techModal.addEventListener("click", event => {
+      if (event.target === els.techModal) closeTechnicianModal();
+    });
+    els.techNameInput.addEventListener("keydown", event => {
+      if (event.key === "Enter") addTechnician();
+    });
+    document.getElementById("exportBtn").addEventListener("click", exportExcel);
+    document.getElementById("printBtn").addEventListener("click", () => window.print());
+    window.addEventListener("resize", () => adjustTableColumnWidths(datesForActiveFilter().length));
+    els.filterButtons.forEach(button => {
+      button.addEventListener("click", () => setFilter(button.dataset.filter));
+    });
 
-    function structuredCloneSafe(value) {
-      if (typeof structuredClone === 'function') {
-        try { return structuredClone(value); } catch (error) { /* fallback abaixo */ }
-      }
-      return JSON.parse(JSON.stringify(value));
-    }
-
-    initFromHistory();
+    loadNames();
+    setDefaultMonth();
+    generateSchedule();
   </script>
 </body>
 </html>
