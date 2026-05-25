@@ -777,6 +777,7 @@
           <button id="openVacationBtn" class="small" type="button">Férias</button>
           <button id="sundayOffBtn" class="small" type="button">Folgas Dom/Fer.</button>
           <button id="addTechBtn" class="small" type="button">Adicionar técnico</button>
+          <button id="toggleEditLockBtn" class="small secondary" type="button">Bloquear edição</button>
         </div>
       </div>
 
@@ -955,7 +956,8 @@
       compensatoryOffDates: [],
       compensatoryOffAssignments: {},
       editingOffDay: null,
-      activeFilter: "todos"
+      activeFilter: "todos",
+      editLocked: false
     };
 
     const els = {
@@ -968,6 +970,7 @@
       filterButtons: document.querySelectorAll("[data-filter]"),
       generalViewBtn: document.getElementById("generalViewBtn"),
       sundayOffBtn: document.getElementById("sundayOffBtn"),
+      toggleEditLockBtn: document.getElementById("toggleEditLockBtn"),
       techModal: document.getElementById("techModal"),
       techNameInput: document.getElementById("techNameInput"),
       techGroupInput: document.getElementById("techGroupInput"),
@@ -998,6 +1001,7 @@
       state.manualCompensatoryOffs = savedCompensatoryOffs ? JSON.parse(savedCompensatoryOffs) : {};
       const savedVacations = localStorage.getItem("escala_plantao_ferias");
       state.vacations = normalizeVacations(savedVacations ? JSON.parse(savedVacations) : []);
+      state.editLocked = localStorage.getItem("escala_plantao_edicao_bloqueada") === "1";
       state.saturdayOverrides = {};
       localStorage.removeItem("escala_plantao_sabados_alteracoes");
       localStorage.removeItem("escala_plantao_sabados_trocas");
@@ -1085,6 +1089,23 @@
       localStorage.setItem("escala_plantao_ferias", JSON.stringify(state.vacations));
     }
 
+    function saveEditLock() {
+      localStorage.setItem("escala_plantao_edicao_bloqueada", state.editLocked ? "1" : "0");
+    }
+
+    function editingIsLocked() {
+      if (!state.editLocked) return false;
+      window.alert("A edição está bloqueada. Clique em Liberar edição para alterar a escala.");
+      return true;
+    }
+
+    function toggleEditLock() {
+      state.editLocked = !state.editLocked;
+      saveEditLock();
+      updateEditLockControls();
+      render();
+    }
+
     function saveSaturdayOverrides() {
       localStorage.removeItem("escala_plantao_sabados_alteracoes");
       localStorage.removeItem("escala_plantao_sabados_trocas");
@@ -1158,6 +1179,7 @@
     }
 
     function changeTechnicianGroup(name, targetGroup) {
+      if (editingIsLocked()) return false;
       if (targetGroup !== "A" && targetGroup !== "B") return false;
 
       const tech = state.technicians.find(item => item.name === name);
@@ -1182,6 +1204,7 @@
     }
 
     function addTechnician() {
+      if (editingIsLocked()) return;
       const cleanName = els.techNameInput.value.trim().replace(/\s+/g, " ").toUpperCase();
       if (!cleanName) return;
 
@@ -1206,6 +1229,7 @@
     }
 
     function removeTechnician(index) {
+      if (editingIsLocked()) return;
       const tech = state.technicians[index];
       if (!tech) return;
 
@@ -1224,6 +1248,7 @@
     }
 
     function openTechnicianModal() {
+      if (editingIsLocked()) return;
       renderTechnicianList();
       els.techModal.classList.add("open");
       els.techModal.setAttribute("aria-hidden", "false");
@@ -1250,6 +1275,7 @@
         remove.className = "small danger";
         remove.type = "button";
         remove.textContent = "Remover";
+        remove.disabled = state.editLocked;
         remove.addEventListener("click", () => removeTechnician(index));
 
         li.append(name, group, remove);
@@ -1258,6 +1284,7 @@
     }
 
     function openVacationModal() {
+      if (editingIsLocked()) return;
       renderVacationOptions();
       els.vacationModal.classList.add("open");
       els.vacationModal.setAttribute("aria-hidden", "false");
@@ -1291,13 +1318,14 @@
 
       const hasTechs = state.rows.length > 0;
       els.vacationTechInput.disabled = !hasTechs;
-      els.vacationStartInput.disabled = !hasTechs;
-      els.vacationEndInput.disabled = !hasTechs;
-      document.getElementById("saveVacationBtn").disabled = !hasTechs;
+      els.vacationStartInput.disabled = !hasTechs || state.editLocked;
+      els.vacationEndInput.disabled = !hasTechs || state.editLocked;
+      document.getElementById("saveVacationBtn").disabled = !hasTechs || state.editLocked;
       renderVacationList();
     }
 
     function addVacation() {
+      if (editingIsLocked()) return;
       const name = els.vacationTechInput.value;
       const start = els.vacationStartInput.value;
       const end = els.vacationEndInput.value;
@@ -1316,6 +1344,7 @@
     }
 
     function removeVacation(index) {
+      if (editingIsLocked()) return;
       state.vacations.splice(index, 1);
       saveVacations();
       generateSchedule();
@@ -1354,6 +1383,7 @@
         remove.className = "small danger";
         remove.type = "button";
         remove.textContent = "Remover";
+        remove.disabled = state.editLocked;
         remove.addEventListener("click", () => removeVacation(item.index));
 
         li.append(name, period, remove);
@@ -1390,6 +1420,7 @@
     }
 
     function openDutyModal() {
+      if (editingIsLocked()) return;
       renderDutyOptions();
       els.dutyModal.classList.add("open");
       els.dutyModal.setAttribute("aria-hidden", "false");
@@ -1437,8 +1468,8 @@
       const hasOptions = dutyDates.length > 0 && state.rows.length > 0;
       els.dutyDateInput.disabled = !hasOptions;
       els.dutyTechInput.disabled = !hasOptions;
-      document.getElementById("saveDutyBtn").disabled = !hasOptions;
-      els.removeDutyBtn.disabled = !hasOptions;
+      document.getElementById("saveDutyBtn").disabled = !hasOptions || state.editLocked;
+      els.removeDutyBtn.disabled = !hasOptions || state.editLocked;
       renderCurrentDutyList();
     }
 
@@ -1476,6 +1507,7 @@
         remove.className = "small danger";
         remove.type = "button";
         remove.textContent = "Retirar";
+        remove.disabled = state.editLocked;
         remove.addEventListener("click", () => removeManualDuty(iso, row.name));
 
         li.append(name, group, remove);
@@ -1510,6 +1542,7 @@
     }
 
     function addManualDuty() {
+      if (editingIsLocked()) return;
       const iso = els.dutyDateInput.value;
       const name = els.dutyTechInput.value;
       if (!iso || !name) return;
@@ -1528,6 +1561,7 @@
     }
 
     function removeManualDuty(isoInput, nameInput) {
+      if (editingIsLocked()) return;
       const iso = isoInput || els.dutyDateInput.value;
       const name = nameInput || els.dutyTechInput.value;
       if (!iso || !name) return;
@@ -1899,6 +1933,7 @@
 
     function render() {
       updateSummaryTotals();
+      updateEditLockControls();
 
       if (state.activeFilter === "folgas-dom-feriados") {
         renderCompensatoryOffDays();
@@ -2052,6 +2087,26 @@
       els.sundayOffBtn.setAttribute("aria-pressed", String(sundayOffActive));
     }
 
+    function updateEditLockControls() {
+      const locked = state.editLocked;
+      els.toggleEditLockBtn.textContent = locked ? "Liberar edição" : "Bloquear edição";
+      els.toggleEditLockBtn.classList.toggle("danger", locked);
+      els.toggleEditLockBtn.setAttribute("aria-pressed", String(locked));
+      document.getElementById("openDutyBtn").disabled = locked;
+      document.getElementById("openVacationBtn").disabled = locked;
+      document.getElementById("addTechBtn").disabled = locked;
+      document.getElementById("saveTechBtn").disabled = locked;
+      document.getElementById("saveDutyBtn").disabled = locked;
+      document.getElementById("removeDutyBtn").disabled = locked;
+      document.getElementById("saveVacationBtn").disabled = locked;
+      els.techNameInput.disabled = locked;
+      els.techGroupInput.disabled = locked;
+      els.vacationStartInput.disabled = locked;
+      els.vacationEndInput.disabled = locked;
+      els.offDateInput.disabled = locked;
+      document.getElementById("saveOffDateBtn").disabled = locked;
+    }
+
     function renderHeader(visibleDates = state.dates) {
       const tr = document.createElement("tr");
       const nameTh = document.createElement("th");
@@ -2130,6 +2185,7 @@
       });
 
       select.value = currentGroup;
+      select.disabled = state.editLocked;
       select.addEventListener("change", event => {
         const changed = changeTechnicianGroup(name, event.target.value);
         if (!changed) event.target.value = currentGroup;
@@ -2159,8 +2215,10 @@
 
     function compensatoryOffCell(value, name, iso) {
       const td = cell(value, `status-cell ${statusClass(value)}`);
-      td.title = value === "FOLGA" ? "Clique para escolher outro dia" : "Sem folga nesta data";
-      if (value === "FOLGA") {
+      td.title = value === "FOLGA"
+        ? (state.editLocked ? "Edição bloqueada" : "Clique para escolher outro dia")
+        : "Sem folga nesta data";
+      if (value === "FOLGA" && !state.editLocked) {
         td.classList.add("clickable-cell");
         td.addEventListener("click", () => openOffDateModal(name, iso));
       }
@@ -2168,6 +2226,7 @@
     }
 
     function openOffDateModal(name, currentIso) {
+      if (editingIsLocked()) return;
       const row = state.rows.find(item => item.name === name);
       const displayName = row ? row.displayName : name;
       state.editingOffDay = { name, currentIso };
@@ -2195,6 +2254,7 @@
     }
 
     function saveOffDateChange() {
+      if (editingIsLocked()) return;
       if (!state.editingOffDay) return;
       const { name, currentIso } = state.editingOffDay;
       const selectedIso = els.offDateInput.value;
@@ -2295,6 +2355,7 @@
     els.month.addEventListener("change", generateSchedule);
     document.getElementById("openDutyBtn").addEventListener("click", openDutyModal);
     document.getElementById("openVacationBtn").addEventListener("click", openVacationModal);
+    document.getElementById("toggleEditLockBtn").addEventListener("click", toggleEditLock);
     document.getElementById("generalViewBtn").addEventListener("click", () => setFilter("todos"));
     document.getElementById("sundayOffBtn").addEventListener("click", () => setFilter("folgas-dom-feriados"));
     document.getElementById("saveDutyBtn").addEventListener("click", addManualDuty);
