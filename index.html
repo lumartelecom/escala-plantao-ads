@@ -1142,8 +1142,7 @@
       state.manualCompensatoryOffs = savedCompensatoryOffs ? JSON.parse(savedCompensatoryOffs) : {};
       const savedVacations = localStorage.getItem("escala_plantao_ferias");
       state.vacations = normalizeVacations(savedVacations ? JSON.parse(savedVacations) : []);
-      state.editLocked = false;
-      localStorage.setItem("escala_plantao_edicao_bloqueada", "0");
+      state.editLocked = localStorage.getItem("escala_plantao_edicao_bloqueada") === "1";
       state.saturdayOverrides = {};
       localStorage.removeItem("escala_plantao_sabados_alteracoes");
       localStorage.removeItem("escala_plantao_sabados_trocas");
