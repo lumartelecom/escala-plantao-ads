@@ -529,7 +529,7 @@
       width: var(--name-col);
       min-width: var(--name-col);
       max-width: var(--name-col);
-      font-weight: 700;
+      font-weight: 400;
       color: #0b1f3a;
       white-space: nowrap;
       overflow: hidden;
@@ -583,7 +583,7 @@
       min-width: var(--date-col);
       max-width: var(--date-col);
       text-align: center;
-      font-weight: 700;
+      font-weight: 400;
       cursor: default;
       user-select: none;
     }
@@ -822,7 +822,7 @@
       .print-report-section .print-name {
         width: 90px;
         text-align: left;
-        font-weight: 800;
+        font-weight: 400;
         color: #0b1f3a;
         background: #fff;
       }
@@ -833,7 +833,7 @@
       }
       .print-report-section .print-status {
         min-width: 38px;
-        font-weight: 800;
+        font-weight: 400;
         word-break: break-word;
       }
       .print-report-section .print-date {
@@ -843,7 +843,7 @@
       .print-report-section .print-duty-name,
       .print-report-section .print-off-date {
         text-align: left;
-        font-weight: 800;
+        font-weight: 400;
       }
       .print-report-section.print-report-wide th,
       .print-report-section.print-report-wide td {
@@ -1778,9 +1778,13 @@
     }
 
     function buildDisplayNames(names) {
+      const customLabels = new Map([
+        ["FRANCISCO DE ASSIS DOS SANTOS SILVA", "F. de Assis"]
+      ]);
       const firstSecondLabels = names.map(name => {
+        if (customLabels.has(name)) return customLabels.get(name);
         const parts = name.trim().split(/\s+/);
-        return parts.length >= 2 ? `${parts[0]} ${parts[1]}` : parts[0];
+        return parts.length >= 2 ? titleCaseDisplayName(`${parts[0]} ${parts[1]}`) : titleCaseDisplayName(parts[0]);
       });
       const counts = firstSecondLabels.reduce((map, label) => {
         map.set(label, (map.get(label) || 0) + 1);
@@ -1788,11 +1792,20 @@
       }, new Map());
 
       return new Map(names.map((name, index) => {
+        if (customLabels.has(name)) return [name, customLabels.get(name)];
         const parts = name.trim().split(/\s+/);
         const firstSecond = firstSecondLabels[index];
-        const firstLast = parts.length >= 2 ? `${parts[0]} ${parts[parts.length - 1]}` : parts[0];
+        const firstLast = parts.length >= 2 ? titleCaseDisplayName(`${parts[0]} ${parts[parts.length - 1]}`) : titleCaseDisplayName(parts[0]);
         return [name, counts.get(firstSecond) > 1 ? firstLast : firstSecond];
       }));
+    }
+
+    function titleCaseDisplayName(value) {
+      const lowerWords = new Set(["DA", "DE", "DO", "DAS", "DOS", "E"]);
+      return String(value).split(/\s+/).filter(Boolean).map((word, index) => {
+        if (index > 0 && lowerWords.has(word)) return word.toLowerCase();
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      }).join(" ");
     }
 
     function setDefaultMonth() {
@@ -2136,6 +2149,13 @@
       return "empty";
     }
 
+    function statusLabel(value) {
+      if (value === "PLANTÃO") return "Plantão";
+      if (value === "FOLGA") return "Folga";
+      if (value === "FÉRIAS") return "Férias";
+      return value;
+    }
+
     function render() {
       updateSummaryTotals();
       updateEditLockControls();
@@ -2413,13 +2433,13 @@
     }
 
     function statusCell(value, rowIndex, dateInfo) {
-      const td = cell(value, `status-cell ${statusClass(value)}`);
+      const td = cell(statusLabel(value), `status-cell ${statusClass(value)}`);
       td.title = dateInfo.weekday === 6 ? "Plantão definido pela lógica dos grupos. Para trocar, altere o grupo do técnico na visão geral." : "";
       return td;
     }
 
     function compensatoryOffCell(value, name, iso) {
-      const td = cell(value, `status-cell ${statusClass(value)}`);
+      const td = cell(statusLabel(value), `status-cell ${statusClass(value)}`);
       td.title = value === "FOLGA"
         ? (state.editLocked ? "Edição bloqueada" : "Clique para escolher outro dia")
         : "Sem folga nesta data";
@@ -2548,7 +2568,7 @@
         const cells = dates.map(dateInfo => {
           const rawValue = row.assignments[dateInfo.iso] || "";
           const value = mode === "domingos" ? (rawValue === "PLANTÃO" ? rawValue : "") : rawValue;
-          return `<td class="print-status ${statusClass(value)}">${escapeHtml(value)}</td>`;
+          return `<td class="print-status ${statusClass(value)}">${escapeHtml(statusLabel(value))}</td>`;
         }).join("");
 
         return `
@@ -2719,9 +2739,9 @@
             th { background: #17212f; color: #ffffff; font-weight: 700; text-align: left; }
             th:first-child, th:nth-child(2) { background: #0b2545; color: #ffffff; font-weight: 800; }
             th small { color: #d9e0e8; font-size: 9px; font-weight: 400; }
-            td.name { width: 280px; min-width: 280px; max-width: 280px; font-weight: 700; color: #0b1f3a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            td.name { width: 280px; min-width: 280px; max-width: 280px; font-weight: 400; color: #0b1f3a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
             td.group-cell { width: 64px; min-width: 64px; max-width: 64px; text-align: center; font-weight: 700; color: #344256; background: #f6f8fa; }
-            td.status-cell { width: 128px; min-width: 128px; max-width: 128px; text-align: center; font-weight: 700; }
+            td.status-cell { width: 128px; min-width: 128px; max-width: 128px; text-align: center; font-weight: 400; }
             .plantao { background: #dff3e5; color: #176b35; }
             .folga { background: #f9e1df; color: #9a2c25; }
             .ferias { background: #fff3cd; color: #7a4d00; }
