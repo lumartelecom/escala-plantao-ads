@@ -246,6 +246,36 @@
       min-width: 142px;
     }
 
+    .print-options {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 3px;
+      min-width: 190px;
+      padding: 6px 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: var(--shadow);
+    }
+
+    .print-option {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--muted);
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .print-option input {
+      width: 14px;
+      height: 14px;
+      margin: 0;
+    }
+
     .summary-actions .small {
       min-width: 66px;
       height: 100%;
@@ -685,7 +715,7 @@
 
     @page {
       size: A4 portrait;
-      margin: 8mm;
+      margin: 5mm;
     }
 
     .print-report {
@@ -722,6 +752,7 @@
       .print-report {
         display: block;
         page-break-inside: avoid;
+        break-inside: avoid;
       }
       .print-report-header {
         display: flex;
@@ -730,50 +761,52 @@
         align-items: flex-start;
         border: 1px solid #aeb8c4;
         background: #f6f8fa;
-        padding: 7px 9px;
-        margin-bottom: 8px;
+        padding: 5px 7px;
+        margin-bottom: 5px;
       }
       .print-report-title {
         margin: 0;
-        font-size: 14px;
+        font-size: 12px;
         color: #0b1f3a;
       }
       .print-report-meta {
-        margin-top: 3px;
+        margin-top: 2px;
         color: #344256;
-        font-size: 10px;
+        font-size: 8px;
         font-weight: 700;
       }
       .print-report-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 7px;
+        gap: 4px;
       }
       .print-report-section {
         border: 1px solid #aeb8c4;
         page-break-inside: avoid;
+        break-inside: avoid;
       }
       .print-report-section.print-report-wide {
         grid-column: 1 / -1;
       }
       .print-report-section h2 {
         margin: 0;
-        padding: 5px 7px;
+        padding: 3px 5px;
         background: #17212f;
         color: #fff;
-        font-size: 11px;
+        font-size: 9px;
       }
       .print-report-section table {
         border: 0;
       }
       .print-report-section th,
       .print-report-section td {
-        font-size: 8px;
-        padding: 4px 5px;
+        font-size: 6.5px;
+        line-height: 1.15;
+        padding: 2px 3px;
       }
       .print-report-section th:first-child,
       .print-report-section td:first-child {
-        width: 58px;
+        width: 45px;
         text-align: center;
       }
       .print-report-section td:last-child {
@@ -848,6 +881,11 @@
         <button class="metric" type="button" data-filter="grupo-a"><span>Plantões sábados A</span><strong id="groupATotal">0</strong></button>
         <button class="metric" type="button" data-filter="grupo-b"><span>Plantões sábados B</span><strong id="groupBTotal">0</strong></button>
         <div class="summary-actions">
+          <div class="print-options" aria-label="Quadros para impressão">
+            <label class="print-option"><input id="printGroupA" type="checkbox" checked> Sábados - Grupo A</label>
+            <label class="print-option"><input id="printGroupB" type="checkbox" checked> Sábados - Grupo B</label>
+            <label class="print-option"><input id="printSundays" type="checkbox" checked> Domingos/Feriados do mês</label>
+          </div>
           <button id="exportBtn" class="small" type="button">Excel</button>
           <button id="printBtn" class="small secondary" type="button">PDF</button>
         </div>
@@ -2416,7 +2454,15 @@
         </section>`;
     }
 
-    function renderPrintReport() {
+    function selectedPrintSections() {
+      return {
+        groupA: document.getElementById("printGroupA")?.checked !== false,
+        groupB: document.getElementById("printGroupB")?.checked !== false,
+        sundays: document.getElementById("printSundays")?.checked !== false
+      };
+    }
+
+    function renderPrintReport(selection = selectedPrintSections()) {
       const printReport = document.getElementById("printReport");
       if (!printReport) return;
 
@@ -2424,6 +2470,11 @@
       const groupADates = saturdayDates.filter(dateInfo => saturdayGroupForDate(dateInfo.iso) === "A");
       const groupBDates = saturdayDates.filter(dateInfo => saturdayGroupForDate(dateInfo.iso) === "B");
       const sundayDates = state.dates.filter(dateInfo => dateInfo.weekday !== 6 && isSundayOrHoliday(dateInfo));
+      const sections = [];
+
+      if (selection.groupA) sections.push(printSectionHtml("Sábados - Grupo A", groupADates));
+      if (selection.groupB) sections.push(printSectionHtml("Sábados - Grupo B", groupBDates));
+      if (selection.sundays) sections.push(printSectionHtml("Domingos/Feriados do mês", sundayDates, true));
 
       printReport.innerHTML = `
         <div class="print-report-header">
@@ -2434,14 +2485,18 @@
           <div class="print-report-meta">Grupos: A e B</div>
         </div>
         <div class="print-report-grid">
-          ${printSectionHtml("Sábados - Grupo A", groupADates)}
-          ${printSectionHtml("Sábados - Grupo B", groupBDates)}
-          ${printSectionHtml("Domingos/Feriados do mês", sundayDates, true)}
+          ${sections.join("")}
         </div>`;
     }
 
     function printSchedule() {
-      renderPrintReport();
+      const selection = selectedPrintSections();
+      if (!selection.groupA && !selection.groupB && !selection.sundays) {
+        window.alert("Selecione pelo menos um quadro para imprimir.");
+        return;
+      }
+
+      renderPrintReport(selection);
       window.print();
     }
 
