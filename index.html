@@ -1142,7 +1142,8 @@
       state.manualCompensatoryOffs = savedCompensatoryOffs ? JSON.parse(savedCompensatoryOffs) : {};
       const savedVacations = localStorage.getItem("escala_plantao_ferias");
       state.vacations = normalizeVacations(savedVacations ? JSON.parse(savedVacations) : []);
-      state.editLocked = localStorage.getItem("escala_plantao_edicao_bloqueada") === "1";
+      state.editLocked = false;
+      localStorage.setItem("escala_plantao_edicao_bloqueada", "0");
       state.saturdayOverrides = {};
       localStorage.removeItem("escala_plantao_sabados_alteracoes");
       localStorage.removeItem("escala_plantao_sabados_trocas");
@@ -1327,15 +1328,7 @@
       if (!tech) return false;
       if (tech.group === targetGroup) return true;
 
-      const previousGroup = tech.group;
-      const partner = promptSwapPartner(tech, targetGroup);
-      if (!partner) {
-        window.alert("Troca cancelada. Informe um técnico válido do outro grupo para concluir a alteração.");
-        return false;
-      }
-
       tech.group = targetGroup;
-      partner.group = previousGroup;
       state.saturdayOverrides = {};
       saveNames();
       saveSaturdayOverrides();
@@ -1575,9 +1568,7 @@
 
     function replacementCandidates(dateInfo, activeGroup, dutyRotationNames, dutyOffset, dutyDateIndex, usedDutyNames = new Set()) {
       if (dateInfo.weekday === 6) {
-        const sameGroup = state.rows.filter(row => row.group === activeGroup).map(row => row.name);
-        const otherTechs = state.rows.filter(row => row.group !== activeGroup).map(row => row.name);
-        return sameGroup.concat(otherTechs);
+        return state.rows.filter(row => row.group === activeGroup).map(row => row.name);
       }
 
       const { year, month } = monthParts();
@@ -1737,6 +1728,17 @@
       const iso = els.dutyDateInput.value;
       const name = els.dutyTechInput.value;
       if (!iso || !name) return;
+      setManualDuty(iso, name);
+    }
+
+    function setManualDuty(iso, name) {
+      const dateInfo = state.dates.find(date => date.iso === iso);
+      if (dateInfo && dateInfo.weekday !== 6 && isSundayOrHoliday(dateInfo) && technicianAlreadyHasSundayHolidayDuty(name, iso)) {
+        const row = state.rows.find(item => item.name === name);
+        const label = row ? row.displayName : name;
+        window.alert(`${label} já está em outro plantão de domingo/feriado neste mês.`);
+        return;
+      }
 
       const alreadyAssigned = currentDutyRowsForDate(iso).some(row => row.name === name);
       cleanNameFromDateMap(state.manualRemovals, iso, name);
@@ -2105,7 +2107,7 @@
         (state.manualAssignments[dateInfo.iso] || []).forEach(name => selected.add(name));
         (state.manualRemovals[dateInfo.iso] || []).forEach(name => selected.delete(name));
 
-        const targetCount = selected.size;
+        const targetCount = isSaturday ? 0 : selected.size;
         selected.forEach(name => {
           if (isTechnicianOnVacation(name, dateInfo.iso)) selected.delete(name);
         });
@@ -2115,12 +2117,14 @@
           });
         }
 
-        const candidates = replacementCandidates(dateInfo, activeGroup, dutyRotationNames, dutyOffset, dutyDateIndex, usedDutyNames);
-        for (const candidate of candidates) {
-          if (selected.size >= targetCount) break;
-          if (selected.has(candidate)) continue;
-          if (isTechnicianOnVacation(candidate, dateInfo.iso)) continue;
-          selected.add(candidate);
+        if (!isSaturday) {
+          const candidates = replacementCandidates(dateInfo, activeGroup, dutyRotationNames, dutyOffset, dutyDateIndex, usedDutyNames);
+          for (const candidate of candidates) {
+            if (selected.size >= targetCount) break;
+            if (selected.has(candidate)) continue;
+            if (isTechnicianOnVacation(candidate, dateInfo.iso)) continue;
+            selected.add(candidate);
+          }
         }
 
         state.rows.forEach(row => {
@@ -2176,11 +2180,11 @@
 
         const scaleTr = document.createElement("tr");
         scaleTr.appendChild(cell(row.displayName, "name"));
-        scaleTr.appendChild(groupCell(row));
+          scaleTr.appendChild(groupCell(row));
 
         visibleDates.forEach(dateInfo => {
           const value = row.assignments[dateInfo.iso] || "";
-          scaleTr.appendChild(statusCell(displayValueForFilter(value), index, dateInfo));
+          scaleTr.appendChild(statusCell(displayValueForFilter(value), index, dateInfo, value, row.name));
         });
 
         els.tbody.appendChild(scaleTr);
@@ -2281,7 +2285,7 @@
       }
 
       if (state.activeFilter === "domingos") {
-        return visibleDates.some(dateInfo => row.assignments[dateInfo.iso] === "PLANTÃO");
+        return true;
       }
 
       return true;
@@ -2422,20 +2426,56 @@
     function groupCell(row) {
       const td = document.createElement("td");
       td.className = "group-cell";
-
-      if (state.activeFilter === "todos") {
-        td.appendChild(createGroupSelect(row.name, row.group));
-      } else {
-        td.textContent = row.group;
-      }
+      td.appendChild(createGroupSelect(row.name, row.group));
 
       return td;
     }
 
-    function statusCell(value, rowIndex, dateInfo) {
+    function statusCell(value, rowIndex, dateInfo, rawValue = value, rowName = "") {
       const td = cell(statusLabel(value), `status-cell ${statusClass(value)}`);
-      td.title = dateInfo.weekday === 6 ? "Plantão definido pela lógica dos grupos. Para trocar, altere o grupo do técnico na visão geral." : "";
+      if (dateInfo.weekday === 6) {
+        td.title = "Plantão definido pela lógica dos grupos. Para trocar, altere o grupo do técnico.";
+      } else if (isSundayOrHoliday(dateInfo)) {
+        td.title = state.editLocked
+          ? "Edição bloqueada"
+          : (rawValue === "PLANTÃO" ? "Clique para retirar este plantão." : "Clique para adicionar este técnico ao plantão.");
+        if (!state.editLocked && rowName) {
+          td.classList.add("clickable-cell");
+          td.addEventListener("click", () => toggleSundayHolidayDuty(dateInfo.iso, rowName, rawValue));
+        }
+      } else {
+        td.title = "";
+      }
       return td;
+    }
+
+    function technicianAlreadyHasSundayHolidayDuty(name, ignoredIso = "") {
+      return state.dates.some(dateInfo =>
+        dateInfo.iso !== ignoredIso &&
+        dateInfo.weekday !== 6 &&
+        isSundayOrHoliday(dateInfo) &&
+        (state.rows.find(row => row.name === name)?.assignments[dateInfo.iso] === "PLANTÃO")
+      );
+    }
+
+    function toggleSundayHolidayDuty(iso, name, currentValue) {
+      if (editingIsLocked()) return;
+      const dateInfo = state.dates.find(date => date.iso === iso);
+      if (!dateInfo || dateInfo.weekday === 6 || !isSundayOrHoliday(dateInfo)) return;
+
+      if (currentValue === "PLANTÃO") {
+        removeManualDuty(iso, name);
+        return;
+      }
+
+      if (technicianAlreadyHasSundayHolidayDuty(name, iso)) {
+        const row = state.rows.find(item => item.name === name);
+        const label = row ? row.displayName : name;
+        window.alert(`${label} já está em outro plantão de domingo/feriado neste mês.`);
+        return;
+      }
+
+      setManualDuty(iso, name);
     }
 
     function compensatoryOffCell(value, name, iso) {
