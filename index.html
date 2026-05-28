@@ -800,17 +800,40 @@
       }
       .print-report-section th,
       .print-report-section td {
-        font-size: 6.5px;
+        font-size: 5.8px;
         line-height: 1.15;
-        padding: 2px 3px;
-      }
-      .print-report-section th:first-child,
-      .print-report-section td:first-child {
-        width: 45px;
+        padding: 1.5px 2px;
+        border: 1px solid #aeb8c4;
         text-align: center;
+        vertical-align: middle;
       }
-      .print-report-section td:last-child {
-        font-weight: 700;
+      .print-report-section th {
+        background: #17212f;
+        color: #fff;
+        font-weight: 800;
+      }
+      .print-report-section th small {
+        display: block;
+        color: #d9e0e8;
+        font-size: 4.8px;
+        font-weight: 600;
+      }
+      .print-report-section .print-name {
+        width: 90px;
+        text-align: left;
+        font-weight: 800;
+        color: #0b1f3a;
+        background: #fff;
+      }
+      .print-report-section .print-group {
+        width: 22px;
+        font-weight: 800;
+        background: #f6f8fa;
+      }
+      .print-report-section .print-status {
+        min-width: 38px;
+        font-weight: 800;
+        word-break: break-word;
       }
       table {
         min-width: 0 !important;
@@ -1058,6 +1081,7 @@
       compensatoryOffDates: [],
       compensatoryOffAssignments: {},
       editingOffDay: null,
+      printSelection: { groupA: true, groupB: true, sundays: true },
       activeFilter: "todos",
       editLocked: false
     };
@@ -2424,45 +2448,65 @@
       return "";
     }
 
-    function assignmentNamesForDate(iso) {
-      return state.rows
-        .filter(row => row.assignments[iso] === "PLANTÃO")
-        .map(row => row.displayName || row.name)
-        .join(", ");
-    }
+    function printSectionRowsHtml(dates, mode) {
+      const rows = state.rows.filter(row => {
+        if (mode === "grupo-a") {
+          return row.group === "A" || dates.some(dateInfo => row.assignments[dateInfo.iso] === "PLANTÃO");
+        }
 
-    function printRowsHtml(dates) {
-      if (!dates.length) {
-        return `<tr><td colspan="2">Sem datas no mês.</td></tr>`;
+        if (mode === "grupo-b") {
+          return row.group === "B" || dates.some(dateInfo => row.assignments[dateInfo.iso] === "PLANTÃO");
+        }
+
+        return dates.some(dateInfo => row.assignments[dateInfo.iso] === "PLANTÃO");
+      });
+
+      if (!rows.length) {
+        return `<tr><td colspan="${Math.max(dates.length + 2, 2)}">Nenhum técnico encontrado.</td></tr>`;
       }
 
-      return dates.map(dateInfo => {
-        const names = assignmentNamesForDate(dateInfo.iso) || "Sem plantonista";
-        return `<tr><td>${escapeHtml(shortDate(dateInfo.iso))}</td><td>${escapeHtml(names)}</td></tr>`;
+      return rows.map(row => {
+        const cells = dates.map(dateInfo => {
+          const rawValue = row.assignments[dateInfo.iso] || "";
+          const value = mode === "domingos" ? (rawValue === "PLANTÃO" ? rawValue : "") : rawValue;
+          return `<td class="print-status ${statusClass(value)}">${escapeHtml(value)}</td>`;
+        }).join("");
+
+        return `
+          <tr>
+            <td class="print-name">${escapeHtml(row.displayName || row.name)}</td>
+            <td class="print-group">${escapeHtml(row.group)}</td>
+            ${cells}
+          </tr>`;
       }).join("");
     }
 
-    function printSectionHtml(title, dates, wide = false) {
+    function printSectionHtml(title, dates, mode, wide = false) {
       const wideClass = wide ? " print-report-wide" : "";
+      const headers = dates.map(dateInfo => {
+        const [, month, day] = dateInfo.iso.split("-");
+        return `<th>${day}/${month}<small>${escapeHtml(dateInfo.label)}</small></th>`;
+      }).join("");
+
       return `
         <section class="print-report-section${wideClass}">
           <h2>${escapeHtml(title)}</h2>
           <table>
-            <thead><tr><th>Data</th><th>Plantonistas</th></tr></thead>
-            <tbody>${printRowsHtml(dates)}</tbody>
+            <thead><tr><th>TÉCNICOS</th><th>GRUPO</th>${headers}</tr></thead>
+            <tbody>${printSectionRowsHtml(dates, mode)}</tbody>
           </table>
         </section>`;
     }
 
     function selectedPrintSections() {
       return {
-        groupA: document.getElementById("printGroupA")?.checked !== false,
-        groupB: document.getElementById("printGroupB")?.checked !== false,
-        sundays: document.getElementById("printSundays")?.checked !== false
+        groupA: Boolean(document.getElementById("printGroupA")?.checked),
+        groupB: Boolean(document.getElementById("printGroupB")?.checked),
+        sundays: Boolean(document.getElementById("printSundays")?.checked)
       };
     }
 
-    function renderPrintReport(selection = selectedPrintSections()) {
+    function renderPrintReport(selection = state.printSelection) {
       const printReport = document.getElementById("printReport");
       if (!printReport) return;
 
@@ -2472,9 +2516,15 @@
       const sundayDates = state.dates.filter(dateInfo => dateInfo.weekday !== 6 && isSundayOrHoliday(dateInfo));
       const sections = [];
 
-      if (selection.groupA) sections.push(printSectionHtml("Sábados - Grupo A", groupADates));
-      if (selection.groupB) sections.push(printSectionHtml("Sábados - Grupo B", groupBDates));
-      if (selection.sundays) sections.push(printSectionHtml("Domingos/Feriados do mês", sundayDates, true));
+      if (selection.groupA) sections.push(printSectionHtml("Sábados - Grupo A", groupADates, "grupo-a"));
+      if (selection.groupB) sections.push(printSectionHtml("Sábados - Grupo B", groupBDates, "grupo-b"));
+      if (selection.sundays) sections.push(printSectionHtml("Domingos/Feriados do mês", sundayDates, "domingos", true));
+
+      if (!sections.length) {
+        sections.push(printSectionHtml("Sábados - Grupo A", groupADates, "grupo-a"));
+        sections.push(printSectionHtml("Sábados - Grupo B", groupBDates, "grupo-b"));
+        sections.push(printSectionHtml("Domingos/Feriados do mês", sundayDates, "domingos", true));
+      }
 
       printReport.innerHTML = `
         <div class="print-report-header">
@@ -2496,6 +2546,7 @@
         return;
       }
 
+      state.printSelection = selection;
       renderPrintReport(selection);
       window.print();
     }
@@ -2594,7 +2645,7 @@
     });
     document.getElementById("exportBtn").addEventListener("click", exportExcel);
     document.getElementById("printBtn").addEventListener("click", printSchedule);
-    window.addEventListener("beforeprint", renderPrintReport);
+    window.addEventListener("beforeprint", () => renderPrintReport());
     window.addEventListener("resize", () => adjustTableColumnWidths(datesForActiveFilter().length));
     els.filterButtons.forEach(button => {
       button.addEventListener("click", () => setFilter(button.dataset.filter));
