@@ -777,16 +777,17 @@
       }
       .print-report-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 4px;
+        grid-template-columns: 1fr;
+        gap: 9px;
       }
       .print-report-section {
         border: 1px solid #aeb8c4;
         page-break-inside: avoid;
         break-inside: avoid;
+        margin-bottom: 2px;
       }
       .print-report-section.print-report-wide {
-        grid-column: 1 / -1;
+        grid-column: auto;
       }
       .print-report-section h2 {
         margin: 0;
@@ -834,6 +835,20 @@
         min-width: 38px;
         font-weight: 800;
         word-break: break-word;
+      }
+      .print-report-section .print-date {
+        width: 48px;
+        font-weight: 800;
+      }
+      .print-report-section .print-duty-name,
+      .print-report-section .print-off-date {
+        text-align: left;
+        font-weight: 800;
+      }
+      .print-report-section.print-report-wide th,
+      .print-report-section.print-report-wide td {
+        font-size: 7.2px;
+        padding: 2.5px 3px;
       }
       table {
         min-width: 0 !important;
@@ -2498,6 +2513,71 @@
         </section>`;
     }
 
+    function compensatoryOffForDuty(name, dutyIso) {
+      const assignments = state.compensatoryOffAssignments[name] || {};
+      const referencedLabel = `Folga ref. ${shortDate(dutyIso)}`;
+      const exactDate = state.compensatoryOffDates.find(dateInfo =>
+        dateInfo.label === referencedLabel && assignments[dateInfo.iso] === "FOLGA"
+      );
+
+      if (exactDate) return shortDate(exactDate.iso);
+
+      const dutyTime = parseIsoDate(dutyIso).getTime();
+      const fallbackDate = state.compensatoryOffDates.find(dateInfo =>
+        assignments[dateInfo.iso] === "FOLGA" && parseIsoDate(dateInfo.iso).getTime() >= dutyTime
+      );
+
+      return fallbackDate ? shortDate(fallbackDate.iso) : "";
+    }
+
+    function sundayHolidaySectionHtml(title, dates) {
+      const dutyRows = [];
+      const offRows = [];
+
+      dates.forEach(dateInfo => {
+        state.rows
+          .filter(row => row.assignments[dateInfo.iso] === "PLANTÃO")
+          .forEach(row => {
+            const offDate = compensatoryOffForDuty(row.name, dateInfo.iso) || "Sem folga lançada";
+            dutyRows.push(`
+              <tr>
+                <td class="print-date">${escapeHtml(shortDate(dateInfo.iso))}</td>
+                <td>${escapeHtml(dateInfo.label)}</td>
+                <td class="print-duty-name">${escapeHtml(row.displayName || row.name)}</td>
+                <td class="print-group">${escapeHtml(row.group)}</td>
+              </tr>`);
+            offRows.push(`
+              <tr>
+                <td class="print-date">${escapeHtml(offDate)}</td>
+                <td class="print-duty-name">${escapeHtml(row.displayName || row.name)}</td>
+                <td class="print-group">${escapeHtml(row.group)}</td>
+                <td>${escapeHtml(shortDate(dateInfo.iso))}</td>
+                <td>${escapeHtml(dateInfo.label)}</td>
+              </tr>`);
+          });
+      });
+
+      return `
+        <section class="print-report-section print-report-wide">
+          <h2>${escapeHtml(title)}</h2>
+          <table>
+            <thead>
+              <tr><th>DATA</th><th>DIA</th><th>PLANTONISTA</th><th>GRUPO</th></tr>
+            </thead>
+            <tbody>${dutyRows.join("") || `<tr><td colspan="4">Nenhum plantonista encontrado.</td></tr>`}</tbody>
+          </table>
+        </section>
+        <section class="print-report-section print-report-wide">
+          <h2>Folgas dos Domingos/Feriados</h2>
+          <table>
+            <thead>
+              <tr><th>FOLGA</th><th>TÉCNICO</th><th>GRUPO</th><th>REF.</th><th>DIA</th></tr>
+            </thead>
+            <tbody>${offRows.join("") || `<tr><td colspan="5">Nenhuma folga encontrada.</td></tr>`}</tbody>
+          </table>
+        </section>`;
+    }
+
     function selectedPrintSections() {
       return {
         groupA: Boolean(document.getElementById("printGroupA")?.checked),
@@ -2518,12 +2598,12 @@
 
       if (selection.groupA) sections.push(printSectionHtml("Sábados - Grupo A", groupADates, "grupo-a"));
       if (selection.groupB) sections.push(printSectionHtml("Sábados - Grupo B", groupBDates, "grupo-b"));
-      if (selection.sundays) sections.push(printSectionHtml("Domingos/Feriados do mês", sundayDates, "domingos", true));
+      if (selection.sundays) sections.push(sundayHolidaySectionHtml("Domingos/Feriados do mês", sundayDates));
 
       if (!sections.length) {
         sections.push(printSectionHtml("Sábados - Grupo A", groupADates, "grupo-a"));
         sections.push(printSectionHtml("Sábados - Grupo B", groupBDates, "grupo-b"));
-        sections.push(printSectionHtml("Domingos/Feriados do mês", sundayDates, "domingos", true));
+        sections.push(sundayHolidaySectionHtml("Domingos/Feriados do mês", sundayDates));
       }
 
       printReport.innerHTML = `
