@@ -1565,6 +1565,48 @@
       return shuffledNames(base, `${year}-${month}-${dutyDateIndex}`);
     }
 
+    function previousMonthParts(year, month) {
+      return month === 1
+        ? { year: year - 1, month: 12 }
+        : { year, month: month - 1 };
+    }
+
+    function simulatedSundayHolidayDuties(year, month, dutyRotationNames, seedUsedNames = new Set()) {
+      const usedNames = new Set(seedUsedNames);
+      const selectedNames = new Set();
+      const dutyDates = datesForMonth(year, month).filter(dateInfo => dateInfo.weekday !== 6 && isSundayOrHoliday(dateInfo));
+
+      dutyDates.forEach((dateInfo, dutyDateIndex) => {
+        const ordered = dutyCandidateOrder(year, month, dutyDateIndex, dutyRotationNames);
+        const selected = new Set();
+        const automaticName = ordered.find(name => !usedNames.has(name) && !isTechnicianOnVacation(name, dateInfo.iso))
+          || ordered.find(name => !isTechnicianOnVacation(name, dateInfo.iso));
+
+        if (automaticName) selected.add(automaticName);
+
+        (state.manualAssignments[dateInfo.iso] || []).forEach(name => selected.add(name));
+        (state.manualRemovals[dateInfo.iso] || []).forEach(name => selected.delete(name));
+
+        selected.forEach(name => {
+          if (isTechnicianOnVacation(name, dateInfo.iso) || usedNames.has(name)) selected.delete(name);
+        });
+
+        for (const candidate of ordered.filter(name => !usedNames.has(name)).concat(ordered.filter(name => usedNames.has(name)))) {
+          if (selected.size >= 1) break;
+          if (selected.has(candidate)) continue;
+          if (isTechnicianOnVacation(candidate, dateInfo.iso)) continue;
+          selected.add(candidate);
+        }
+
+        selected.forEach(name => {
+          selectedNames.add(name);
+          usedNames.add(name);
+        });
+      });
+
+      return selectedNames;
+    }
+
     function replacementCandidates(dateInfo, activeGroup, dutyRotationNames, dutyOffset, dutyDateIndex, usedDutyNames = new Set()) {
       if (dateInfo.weekday === 6) {
         return state.rows.filter(row => row.group === activeGroup).map(row => row.name);
@@ -1696,7 +1738,8 @@
       const dutyIndex = eligibleDutyDates().findIndex(date => date.iso === iso);
       if (dutyIndex < 0) return [];
 
-      const usedNames = new Set();
+      const previousMonth = previousMonthParts(year, month);
+      const usedNames = simulatedSundayHolidayDuties(previousMonth.year, previousMonth.month, dutyRotationNames);
       eligibleDutyDates().slice(0, dutyIndex).forEach((date, index) => {
         const available = dutyCandidateOrder(year, month, index, dutyRotationNames)
           .filter(name => !usedNames.has(name) && !isTechnicianOnVacation(name, date.iso));
@@ -1736,6 +1779,12 @@
         const row = state.rows.find(item => item.name === name);
         const label = row ? row.displayName : name;
         window.alert(`${label} já está em outro plantão de domingo/feriado neste mês.`);
+        return;
+      }
+      if (dateInfo && dateInfo.weekday !== 6 && isSundayOrHoliday(dateInfo) && technicianHadPreviousMonthSundayHolidayDuty(name, iso)) {
+        const row = state.rows.find(item => item.name === name);
+        const label = row ? row.displayName : name;
+        window.alert(`${label} já ficou em plantão de domingo/feriado no mês anterior.`);
         return;
       }
 
@@ -2078,7 +2127,8 @@
 
       let saturdayIndex = 0;
       let dutyDateIndex = 0;
-      const usedDutyNames = new Set();
+      const previousMonth = previousMonthParts(year, month);
+      const usedDutyNames = simulatedSundayHolidayDuties(previousMonth.year, previousMonth.month, dutyRotationNames);
 
       state.dates.forEach(dateInfo => {
         const isSaturday = dateInfo.weekday === 6;
@@ -2455,6 +2505,13 @@
         isSundayOrHoliday(dateInfo) &&
         (state.rows.find(row => row.name === name)?.assignments[dateInfo.iso] === "PLANTÃO")
       );
+    }
+
+    function technicianHadPreviousMonthSundayHolidayDuty(name, iso) {
+      const [year, month] = iso.split("-").map(Number);
+      const previousMonth = previousMonthParts(year, month);
+      const previousNames = simulatedSundayHolidayDuties(previousMonth.year, previousMonth.month, interleavedTechnicianNames());
+      return previousNames.has(name);
     }
 
     function toggleSundayHolidayDuty(iso, name, currentValue) {
