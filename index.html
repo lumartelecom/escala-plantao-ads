@@ -614,6 +614,11 @@
       color: var(--green-ink);
     }
 
+    .meio-dia {
+      background: #e7f0ff;
+      color: #1d4f91;
+    }
+
     .folga {
       background: var(--red);
       color: var(--red-ink);
@@ -908,6 +913,7 @@
           <button id="generalViewBtn" class="small" type="button">Geral</button>
           <button id="openDutyBtn" class="small" type="button">Plantonistas por data</button>
           <button id="openVacationBtn" class="small" type="button">Férias</button>
+          <button id="openFixedMorningBtn" class="small" type="button">Até 12h</button>
           <button id="sundayOffBtn" class="small" type="button">Folgas Dom/Fer.</button>
           <button id="addTechBtn" class="small" type="button">Adicionar técnico</button>
           <button id="toggleEditLockBtn" class="small secondary" type="button">Bloquear edição</button>
@@ -916,12 +922,12 @@
 
       <section class="summary" aria-label="Resumo da escala">
         <button class="metric" type="button" data-filter="domingos"><span>Domingos/Feriados</span><strong id="sundayDutyTotal">0</strong></button>
-        <button class="metric" type="button" data-filter="grupo-a"><span>Plantões sábados A</span><strong id="groupATotal">0</strong></button>
-        <button class="metric" type="button" data-filter="grupo-b"><span>Plantões sábados B</span><strong id="groupBTotal">0</strong></button>
+        <button class="metric" type="button" data-filter="grupo-a"><span>Turma 10 - Sáb. 1/3/5</span><strong id="groupATotal">0</strong></button>
+        <button class="metric" type="button" data-filter="grupo-b"><span>Turma 10 - Sáb. 2/4</span><strong id="groupBTotal">0</strong></button>
         <div class="summary-actions">
           <div class="print-options" aria-label="Quadros para impressão">
-            <label class="print-option"><input id="printGroupA" type="checkbox" checked> Sábados - Grupo A</label>
-            <label class="print-option"><input id="printGroupB" type="checkbox" checked> Sábados - Grupo B</label>
+            <label class="print-option"><input id="printGroupA" type="checkbox" checked> Turma 10 - Sáb. 1/3/5</label>
+            <label class="print-option"><input id="printGroupB" type="checkbox" checked> Turma 10 - Sáb. 2/4</label>
             <label class="print-option"><input id="printSundays" type="checkbox" checked> Domingos/Feriados do mês</label>
           </div>
           <button id="exportBtn" class="small" type="button">Excel</button>
@@ -990,7 +996,7 @@
             <button id="removeDutyBtn" class="small danger" type="button">Retirar</button>
           </div>
         </div>
-        <p class="hint">Escolha um domingo ou feriado do mês para adicionar ou retirar plantonista. Para mudar sábados, altere o grupo do técnico na visão geral e escolha quem do outro grupo vai trocar.</p>
+        <p class="hint">Escolha um domingo ou feriado do mês para adicionar ou retirar plantonista. Aos sábados, a escala usa duas turmas de 10 e 4 fixos até 12h no mês.</p>
         <div class="current-duty-box">
           <h3 class="current-duty-title">Plantonistas atuais</h3>
           <ul class="current-duty-list" id="currentDutyList"></ul>
@@ -998,6 +1004,23 @@
       </div>
       <div class="modal-footer">
         <button id="doneDutyModalBtn" class="small" type="button">Concluir</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="fixedMorningModal" aria-hidden="true">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="fixedMorningModalTitle">
+      <div class="modal-header">
+        <h2 id="fixedMorningModalTitle">Técnicos até 12h</h2>
+        <button id="closeFixedMorningModalBtn" class="small secondary" type="button">Fechar</button>
+      </div>
+      <div class="modal-body">
+        <p class="hint" id="fixedMorningInfo">Escolha os 4 técnicos que ficam até meio-dia nos sábados do mês.</p>
+        <div class="modal-grid" id="fixedMorningSelectors"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelFixedMorningBtn" class="small secondary" type="button">Cancelar</button>
+        <button id="saveFixedMorningBtn" class="small" type="button">Salvar</button>
       </div>
     </section>
   </div>
@@ -1083,6 +1106,16 @@
       "VÍTOR HUGO DE CARVALHO RIBEIRO"
     ];
 
+    const SATURDAY_TEAM_COUNT = 10;
+    const FIXED_MORNING_COUNT = 4;
+    const FIXED_MORNING_STATUS = "ATÉ 12H";
+    const DEFAULT_FIXED_MORNING_TOKEN_GROUPS = [
+      ["HUGO"],
+      ["ALEXANDRE"],
+      ["FELIPE", "CLEYSON"],
+      ["JEFFERSON", "EMANUEL"]
+    ];
+
     const state = {
       technicians: [],
       dates: [],
@@ -1091,6 +1124,7 @@
       manualAssignments: {},
       manualRemovals: {},
       manualCompensatoryOffs: {},
+      fixedMorningAssignments: {},
       vacations: [],
       saturdayOverrides: {},
       compensatoryOffDates: [],
@@ -1126,6 +1160,9 @@
       vacationStartInput: document.getElementById("vacationStartInput"),
       vacationEndInput: document.getElementById("vacationEndInput"),
       vacationList: document.getElementById("vacationList"),
+      fixedMorningModal: document.getElementById("fixedMorningModal"),
+      fixedMorningSelectors: document.getElementById("fixedMorningSelectors"),
+      fixedMorningInfo: document.getElementById("fixedMorningInfo"),
       offDateModal: document.getElementById("offDateModal"),
       offDateInput: document.getElementById("offDateInput"),
       offDateInfo: document.getElementById("offDateInfo")
@@ -1140,6 +1177,8 @@
       state.manualRemovals = savedManualRemovals ? JSON.parse(savedManualRemovals) : {};
       const savedCompensatoryOffs = localStorage.getItem("escala_plantao_folgas_dom_feriados");
       state.manualCompensatoryOffs = savedCompensatoryOffs ? JSON.parse(savedCompensatoryOffs) : {};
+      const savedFixedMorning = localStorage.getItem("escala_plantao_ate_meio_dia");
+      state.fixedMorningAssignments = normalizeFixedMorningAssignments(savedFixedMorning ? JSON.parse(savedFixedMorning) : {});
       const savedVacations = localStorage.getItem("escala_plantao_ferias");
       state.vacations = normalizeVacations(savedVacations ? JSON.parse(savedVacations) : []);
       state.editLocked = localStorage.getItem("escala_plantao_edicao_bloqueada") === "1";
@@ -1206,6 +1245,26 @@
         );
     }
 
+    function normalizeFixedMorningAssignments(value) {
+      const result = {};
+      if (!value || typeof value !== "object") return result;
+
+      Object.entries(value).forEach(([monthKey, names]) => {
+        if (!/^\d{4}-\d{2}$/.test(monthKey) || !Array.isArray(names)) return;
+        const unique = [];
+        names.forEach(name => {
+          const cleanName = String(name || "").trim().replace(/\s+/g, " ").toUpperCase();
+          if (!cleanName) return;
+          if (!state.technicians.some(tech => tech.name === cleanName)) return;
+          if (unique.includes(cleanName)) return;
+          unique.push(cleanName);
+        });
+        if (unique.length) result[monthKey] = unique.slice(0, FIXED_MORNING_COUNT);
+      });
+
+      return result;
+    }
+
     function technicianNames() {
       return state.technicians.map(tech => tech.name);
     }
@@ -1224,6 +1283,10 @@
 
     function saveManualCompensatoryOffs() {
       localStorage.setItem("escala_plantao_folgas_dom_feriados", JSON.stringify(state.manualCompensatoryOffs));
+    }
+
+    function saveFixedMorningAssignments() {
+      localStorage.setItem("escala_plantao_ate_meio_dia", JSON.stringify(state.fixedMorningAssignments));
     }
 
     function saveVacations() {
@@ -1288,6 +1351,24 @@
 
     function technicianDisplayName(name) {
       return state.displayNames.get(name) || name;
+    }
+
+    function searchableName(value) {
+      return String(value || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^A-Z0-9]+/gi, " ")
+        .trim()
+        .toUpperCase();
+    }
+
+    function findTechnicianByTokens(tokenGroup, excluded = new Set()) {
+      const tokens = tokenGroup.map(searchableName).filter(Boolean);
+      return state.technicians.find(tech => {
+        if (excluded.has(tech.name)) return false;
+        const searchName = searchableName(tech.name);
+        return tokens.every(token => searchName.includes(token));
+      })?.name || "";
     }
 
     function promptSwapPartner(tech, targetGroup) {
@@ -1414,6 +1495,74 @@
         li.append(name, group, remove);
         els.techList.appendChild(li);
       });
+    }
+
+    function openFixedMorningModal() {
+      if (editingIsLocked()) return;
+      renderFixedMorningOptions();
+      els.fixedMorningModal.classList.add("open");
+      els.fixedMorningModal.setAttribute("aria-hidden", "false");
+    }
+
+    function closeFixedMorningModal() {
+      els.fixedMorningModal.classList.remove("open");
+      els.fixedMorningModal.setAttribute("aria-hidden", "true");
+    }
+
+    function renderFixedMorningOptions() {
+      const { year, month } = monthParts();
+      const rotationNames = interleavedTechnicianNames();
+      const selectedNames = monthlyFixedMorningNames(year, month, rotationNames);
+      els.fixedMorningInfo.textContent = `Escolha os ${FIXED_MORNING_COUNT} técnicos que ficam até meio-dia nos sábados de ${monthLabelForPrint()}.`;
+      els.fixedMorningSelectors.innerHTML = "";
+
+      for (let index = 0; index < FIXED_MORNING_COUNT; index += 1) {
+        const wrapper = document.createElement("div");
+        const label = document.createElement("label");
+        label.textContent = `Técnico ${index + 1}`;
+
+        const select = document.createElement("select");
+        select.className = "fixed-morning-select";
+        select.disabled = state.editLocked;
+
+        state.rows.forEach(row => {
+          const option = document.createElement("option");
+          option.value = row.name;
+          option.textContent = `${row.displayName} - Grupo ${row.group}`;
+          select.appendChild(option);
+        });
+
+        if (selectedNames[index]) select.value = selectedNames[index];
+        wrapper.append(label, select);
+        els.fixedMorningSelectors.appendChild(wrapper);
+      }
+    }
+
+    function saveFixedMorningSelection() {
+      if (editingIsLocked()) return;
+      const { year, month } = monthParts();
+      const selected = Array.from(els.fixedMorningSelectors.querySelectorAll("select"))
+        .map(select => select.value)
+        .filter(Boolean);
+      const unique = Array.from(new Set(selected));
+
+      if (unique.length !== FIXED_MORNING_COUNT) {
+        window.alert(`Escolha ${FIXED_MORNING_COUNT} técnicos diferentes para ficar até 12h.`);
+        return;
+      }
+
+      const previousMonth = previousMonthParts(year, month);
+      const previousNames = new Set(monthlyFixedMorningNames(previousMonth.year, previousMonth.month, interleavedTechnicianNames()));
+      const repeated = unique.filter(name => previousNames.has(name));
+      if (repeated.length) {
+        const labels = repeated.map(name => technicianDisplayName(name)).join(", ");
+        window.alert(`${labels} já ficou até 12h no mês anterior. A escala será salva mesmo assim.`);
+      }
+
+      state.fixedMorningAssignments[monthKey(year, month)] = unique;
+      saveFixedMorningAssignments();
+      closeFixedMorningModal();
+      generateSchedule();
     }
 
     function openVacationModal() {
@@ -1731,15 +1880,16 @@
       const dateInfo = state.dates.find(date => date.iso === iso);
       if (!dateInfo || dateInfo.weekday === 6 || !isSundayOrHoliday(dateInfo)) return [];
 
-      const dutyRotationNames = interleavedTechnicianNames();
+      const { year, month } = monthParts();
+      const dutyRotationNames = dutyRotationNamesForMonth(year, month);
       if (!dutyRotationNames.length) return [];
 
-      const { year, month } = monthParts();
       const dutyIndex = eligibleDutyDates().findIndex(date => date.iso === iso);
       if (dutyIndex < 0) return [];
 
       const previousMonth = previousMonthParts(year, month);
-      const usedNames = simulatedSundayHolidayDuties(previousMonth.year, previousMonth.month, dutyRotationNames);
+      const previousDutyRotationNames = dutyRotationNamesForMonth(previousMonth.year, previousMonth.month);
+      const usedNames = simulatedSundayHolidayDuties(previousMonth.year, previousMonth.month, previousDutyRotationNames);
       eligibleDutyDates().slice(0, dutyIndex).forEach((date, index) => {
         const available = dutyCandidateOrder(year, month, index, dutyRotationNames)
           .filter(name => !usedNames.has(name) && !isTechnicianOnVacation(name, date.iso));
@@ -1775,6 +1925,16 @@
 
     function setManualDuty(iso, name) {
       const dateInfo = state.dates.find(date => date.iso === iso);
+      if (dateInfo && dateInfo.weekday !== 6 && isSundayOrHoliday(dateInfo)) {
+        const [year, month] = iso.split("-").map(Number);
+        const fixedNames = new Set(monthlyFixedMorningNames(year, month, interleavedTechnicianNames()));
+        if (fixedNames.has(name)) {
+          const row = state.rows.find(item => item.name === name);
+          const label = row ? row.displayName : name;
+          window.alert(`${label} estÃ¡ fixo atÃ© 12h neste mÃªs e nÃ£o pode pegar plantÃ£o de domingo/feriado.`);
+          return;
+        }
+      }
       if (dateInfo && dateInfo.weekday !== 6 && isSundayOrHoliday(dateInfo) && technicianAlreadyHasSundayHolidayDuty(name, iso)) {
         const row = state.rows.find(item => item.name === name);
         const label = row ? row.displayName : name;
@@ -1988,28 +2148,80 @@
       return (year * 12) + (month - 1);
     }
 
-    function saturdayStartParity(year, month) {
+    function monthRotationStartIndex(year, month, rotationLength, step) {
+      if (!rotationLength) return 0;
+
       const baseYear = 2026;
       const baseMonth = 1;
       const current = monthSerial(year, month);
       const base = monthSerial(baseYear, baseMonth);
-      let totalPreviousSaturdays = 0;
+      const offset = (current - base) * step;
+      return ((offset % rotationLength) + rotationLength) % rotationLength;
+    }
 
-      if (current >= base) {
-        for (let serial = base; serial < current; serial += 1) {
-          const itemYear = Math.floor(serial / 12);
-          const itemMonth = (serial % 12) + 1;
-          totalPreviousSaturdays += countSaturdaysInMonth(itemYear, itemMonth);
-        }
-      } else {
-        for (let serial = current; serial < base; serial += 1) {
-          const itemYear = Math.floor(serial / 12);
-          const itemMonth = (serial % 12) + 1;
-          totalPreviousSaturdays -= countSaturdaysInMonth(itemYear, itemMonth);
-        }
-      }
+    function monthKey(year, month) {
+      return `${year}-${String(month).padStart(2, "0")}`;
+    }
 
-      return ((totalPreviousSaturdays % 2) + 2) % 2;
+    function defaultFixedMorningNames(rotationNames) {
+      const rotationSet = new Set(rotationNames);
+      const selected = [];
+      const excluded = new Set();
+
+      DEFAULT_FIXED_MORNING_TOKEN_GROUPS.forEach(tokenGroup => {
+        const name = findTechnicianByTokens(tokenGroup, excluded);
+        if (!name || !rotationSet.has(name)) return;
+        selected.push(name);
+        excluded.add(name);
+      });
+
+      rotationNames.forEach(name => {
+        if (selected.length >= FIXED_MORNING_COUNT) return;
+        if (excluded.has(name)) return;
+        selected.push(name);
+        excluded.add(name);
+      });
+
+      return selected.slice(0, Math.min(FIXED_MORNING_COUNT, rotationNames.length));
+    }
+
+    function monthlyFixedMorningNames(year, month, rotationNames) {
+      const saved = state.fixedMorningAssignments[monthKey(year, month)] || [];
+      const rotationSet = new Set(rotationNames);
+      const selected = [];
+
+      saved.forEach(name => {
+        if (!rotationSet.has(name)) return;
+        if (selected.includes(name)) return;
+        selected.push(name);
+      });
+
+      const defaults = defaultFixedMorningNames(rotationNames);
+      defaults.concat(rotationNames).forEach(name => {
+        if (selected.length >= FIXED_MORNING_COUNT) return;
+        if (!rotationSet.has(name) || selected.includes(name)) return;
+        selected.push(name);
+      });
+
+      return selected.slice(0, Math.min(FIXED_MORNING_COUNT, rotationNames.length));
+    }
+
+    function saturdayTeamsForMonth(year, month, rotationNames) {
+      const fixed = new Set(monthlyFixedMorningNames(year, month, rotationNames));
+      const available = rotationNames.filter(name => !fixed.has(name));
+      return {
+        fixed,
+        teams: [
+          available.slice(0, SATURDAY_TEAM_COUNT),
+          available.slice(SATURDAY_TEAM_COUNT, SATURDAY_TEAM_COUNT * 2)
+        ]
+      };
+    }
+
+    function dutyRotationNamesForMonth(year, month) {
+      const rotationNames = interleavedTechnicianNames();
+      const fixed = new Set(monthlyFixedMorningNames(year, month, rotationNames));
+      return rotationNames.filter(name => !fixed.has(name));
     }
 
     function dutyStartIndex(year, month, rotationLength) {
@@ -2110,12 +2322,13 @@
 
     function generateSchedule() {
       const names = technicianNames();
-      const dutyRotationNames = interleavedTechnicianNames();
+      const baseRotationNames = interleavedTechnicianNames();
       state.displayNames = buildDisplayNames(names);
       const dutyCount = 1;
       const { year, month } = monthParts();
       state.dates = datesForMonth(year, month);
-      const saturdayOffset = saturdayStartParity(year, month);
+      const saturdayPlan = saturdayTeamsForMonth(year, month, baseRotationNames);
+      const dutyRotationNames = baseRotationNames.filter(name => !saturdayPlan.fixed.has(name));
       const dutyOffset = dutyStartIndex(year, month, dutyRotationNames.length);
 
       state.rows = state.technicians.map(tech => ({
@@ -2128,49 +2341,51 @@
       let saturdayIndex = 0;
       let dutyDateIndex = 0;
       const previousMonth = previousMonthParts(year, month);
-      const usedDutyNames = simulatedSundayHolidayDuties(previousMonth.year, previousMonth.month, dutyRotationNames);
+      const previousDutyRotationNames = dutyRotationNamesForMonth(previousMonth.year, previousMonth.month);
+      const usedDutyNames = simulatedSundayHolidayDuties(previousMonth.year, previousMonth.month, previousDutyRotationNames);
 
       state.dates.forEach(dateInfo => {
         const isSaturday = dateInfo.weekday === 6;
-        const isDutyDate = dateInfo.weekday === 0 || dateInfo.isHoliday;
-        const countForDate = isSaturday ? Math.ceil(names.length / 2) : dutyCount;
+        const isDutyDate = !isSaturday && isSundayOrHoliday(dateInfo);
         const selected = new Set();
         let activeGroup = "";
 
         if (isSaturday) {
-          activeGroup = (saturdayOffset + saturdayIndex) % 2 === 0 ? "A" : "B";
-          const groupRows = state.rows.filter(row => row.group === activeGroup);
-          groupRows.forEach(row => selected.add(row.name));
+          saturdayPlan.teams[saturdayIndex % 2].forEach(name => selected.add(name));
         } else if (isDutyDate) {
           const ordered = dutyCandidateOrder(year, month, dutyDateIndex, dutyRotationNames);
           ordered
             .filter(name => !usedDutyNames.has(name))
-            .slice(0, countForDate)
+            .slice(0, dutyCount)
             .forEach(name => selected.add(name));
 
-          if (selected.size < countForDate) {
-            ordered.slice(0, countForDate).forEach(name => selected.add(name));
+          if (selected.size < dutyCount) {
+            ordered.slice(0, dutyCount).forEach(name => selected.add(name));
           }
         }
 
-        (state.manualAssignments[dateInfo.iso] || []).forEach(name => selected.add(name));
-        (state.manualRemovals[dateInfo.iso] || []).forEach(name => selected.delete(name));
+        if (isDutyDate) {
+          (state.manualAssignments[dateInfo.iso] || []).forEach(name => selected.add(name));
+          (state.manualRemovals[dateInfo.iso] || []).forEach(name => selected.delete(name));
+        }
 
-        const targetCount = isSaturday ? 0 : selected.size;
+        const targetCount = isDutyDate ? selected.size : 0;
         selected.forEach(name => {
           if (isTechnicianOnVacation(name, dateInfo.iso)) selected.delete(name);
         });
         if (isDutyDate) {
           selected.forEach(name => {
-            if (usedDutyNames.has(name)) selected.delete(name);
+            if (usedDutyNames.has(name) || saturdayPlan.fixed.has(name)) selected.delete(name);
           });
         }
 
-        if (!isSaturday) {
+        if (isDutyDate) {
           const candidates = replacementCandidates(dateInfo, activeGroup, dutyRotationNames, dutyOffset, dutyDateIndex, usedDutyNames);
+
           for (const candidate of candidates) {
             if (selected.size >= targetCount) break;
             if (selected.has(candidate)) continue;
+            if (saturdayPlan.fixed.has(candidate)) continue;
             if (isTechnicianOnVacation(candidate, dateInfo.iso)) continue;
             selected.add(candidate);
           }
@@ -2179,7 +2394,7 @@
         state.rows.forEach(row => {
           row.assignments[dateInfo.iso] = isTechnicianOnVacation(row.name, dateInfo.iso)
             ? "FÉRIAS"
-            : (selected.has(row.name) ? "PLANTÃO" : "FOLGA");
+            : (isSaturday && saturdayPlan.fixed.has(row.name) ? FIXED_MORNING_STATUS : (selected.has(row.name) ? "PLANTÃO" : "FOLGA"));
         });
 
         if (isSaturday) {
@@ -2197,6 +2412,7 @@
 
     function statusClass(value) {
       if (value === "PLANTÃO") return "plantao";
+      if (value === FIXED_MORNING_STATUS) return "meio-dia";
       if (value === "FOLGA") return "folga";
       if (value === "FÉRIAS") return "ferias";
       return "empty";
@@ -2204,6 +2420,7 @@
 
     function statusLabel(value) {
       if (value === "PLANTÃO") return "Plantão";
+      if (value === FIXED_MORNING_STATUS) return "Até 12h";
       if (value === "FOLGA") return "Folga";
       if (value === "FÉRIAS") return "Férias";
       return value;
@@ -2244,9 +2461,20 @@
 
     function updateSummaryTotals() {
       let sundayDutyTotal = 0;
+      let saturdayEvenTotal = 0;
+      let saturdayOddTotal = 0;
 
-      els.groupATotal.textContent = state.rows.filter(row => row.group === "A").length;
-      els.groupBTotal.textContent = state.rows.filter(row => row.group === "B").length;
+      state.dates.forEach(dateInfo => {
+        if (dateInfo.weekday !== 6) return;
+        if ((saturdayEvenTotal + saturdayOddTotal) % 2 === 0) {
+          saturdayEvenTotal += 1;
+        } else {
+          saturdayOddTotal += 1;
+        }
+      });
+
+      els.groupATotal.textContent = saturdayEvenTotal;
+      els.groupBTotal.textContent = saturdayOddTotal;
 
       state.rows.forEach(row => {
         state.dates.forEach(dateInfo => {
@@ -2303,13 +2531,11 @@
 
       if (state.activeFilter === "grupo-a" || state.activeFilter === "grupo-b") {
         const targetIndexParity = state.activeFilter === "grupo-a" ? 0 : 1;
-        const { year, month } = monthParts();
-        const offset = saturdayStartParity(year, month);
         let saturdayIndex = -1;
         return state.dates.filter(dateInfo => {
           if (dateInfo.weekday !== 6) return false;
           saturdayIndex += 1;
-          return (offset + saturdayIndex) % 2 === targetIndexParity;
+          return saturdayIndex % 2 === targetIndexParity;
         });
       }
 
@@ -2322,11 +2548,11 @@
 
     function matchesFilter(row, visibleDates = state.dates) {
       if (state.activeFilter === "grupo-a") {
-        return row.group === "A" || visibleDates.some(dateInfo => row.assignments[dateInfo.iso] === "PLANTÃO");
+        return visibleDates.some(dateInfo => ["PLANTÃO", FIXED_MORNING_STATUS].includes(row.assignments[dateInfo.iso]));
       }
 
       if (state.activeFilter === "grupo-b") {
-        return row.group === "B" || visibleDates.some(dateInfo => row.assignments[dateInfo.iso] === "PLANTÃO");
+        return visibleDates.some(dateInfo => ["PLANTÃO", FIXED_MORNING_STATUS].includes(row.assignments[dateInfo.iso]));
       }
 
       if (state.activeFilter === "plantoes") {
@@ -2372,11 +2598,13 @@
       els.toggleEditLockBtn.setAttribute("aria-pressed", String(locked));
       document.getElementById("openDutyBtn").disabled = locked;
       document.getElementById("openVacationBtn").disabled = locked;
+      document.getElementById("openFixedMorningBtn").disabled = locked;
       document.getElementById("addTechBtn").disabled = locked;
       document.getElementById("saveTechBtn").disabled = locked;
       document.getElementById("saveDutyBtn").disabled = locked;
       document.getElementById("removeDutyBtn").disabled = locked;
       document.getElementById("saveVacationBtn").disabled = locked;
+      document.getElementById("saveFixedMorningBtn").disabled = locked;
       els.techNameInput.disabled = locked;
       els.techGroupInput.disabled = locked;
       els.vacationStartInput.disabled = locked;
@@ -2483,7 +2711,7 @@
     function statusCell(value, rowIndex, dateInfo, rawValue = value, rowName = "") {
       const td = cell(statusLabel(value), `status-cell ${statusClass(value)}`);
       if (dateInfo.weekday === 6) {
-        td.title = "Plantão definido pela lógica dos grupos. Para trocar, altere o grupo do técnico.";
+        td.title = "Sábado definido por duas turmas de 10 e 4 fixos até 12h no mês.";
       } else if (isSundayOrHoliday(dateInfo)) {
         td.title = state.editLocked
           ? "Edição bloqueada"
@@ -2510,7 +2738,11 @@
     function technicianHadPreviousMonthSundayHolidayDuty(name, iso) {
       const [year, month] = iso.split("-").map(Number);
       const previousMonth = previousMonthParts(year, month);
-      const previousNames = simulatedSundayHolidayDuties(previousMonth.year, previousMonth.month, interleavedTechnicianNames());
+      const previousNames = simulatedSundayHolidayDuties(
+        previousMonth.year,
+        previousMonth.month,
+        dutyRotationNamesForMonth(previousMonth.year, previousMonth.month)
+      );
       return previousNames.has(name);
     }
 
@@ -2628,15 +2860,13 @@
     }
 
     function saturdayGroupForDate(iso) {
-      const { year, month } = monthParts();
-      const offset = saturdayStartParity(year, month);
       let saturdayIndex = -1;
 
       for (const dateInfo of state.dates) {
         if (dateInfo.weekday !== 6) continue;
         saturdayIndex += 1;
         if (dateInfo.iso === iso) {
-          return (offset + saturdayIndex) % 2 === 0 ? "A" : "B";
+          return saturdayIndex % 2 === 0 ? "A" : "B";
         }
       }
 
@@ -2646,11 +2876,11 @@
     function printSectionRowsHtml(dates, mode) {
       const rows = state.rows.filter(row => {
         if (mode === "grupo-a") {
-          return row.group === "A" || dates.some(dateInfo => row.assignments[dateInfo.iso] === "PLANTÃO");
+          return dates.some(dateInfo => ["PLANTÃO", FIXED_MORNING_STATUS].includes(row.assignments[dateInfo.iso]));
         }
 
         if (mode === "grupo-b") {
-          return row.group === "B" || dates.some(dateInfo => row.assignments[dateInfo.iso] === "PLANTÃO");
+          return dates.some(dateInfo => ["PLANTÃO", FIXED_MORNING_STATUS].includes(row.assignments[dateInfo.iso]));
         }
 
         return dates.some(dateInfo => row.assignments[dateInfo.iso] === "PLANTÃO");
@@ -2776,13 +3006,13 @@
       const sundayDates = state.dates.filter(dateInfo => dateInfo.weekday !== 6 && isSundayOrHoliday(dateInfo));
       const sections = [];
 
-      if (selection.groupA) sections.push(printSectionHtml("Sábados - Grupo A", groupADates, "grupo-a"));
-      if (selection.groupB) sections.push(printSectionHtml("Sábados - Grupo B", groupBDates, "grupo-b"));
+      if (selection.groupA) sections.push(printSectionHtml("Turma 10 - Sáb. 1/3/5", groupADates, "grupo-a"));
+      if (selection.groupB) sections.push(printSectionHtml("Turma 10 - Sáb. 2/4", groupBDates, "grupo-b"));
       if (selection.sundays) sections.push(sundayHolidaySectionHtml("Domingos/Feriados do mês", sundayDates));
 
       if (!sections.length) {
-        sections.push(printSectionHtml("Sábados - Grupo A", groupADates, "grupo-a"));
-        sections.push(printSectionHtml("Sábados - Grupo B", groupBDates, "grupo-b"));
+        sections.push(printSectionHtml("Turma 10 - Sáb. 1/3/5", groupADates, "grupo-a"));
+        sections.push(printSectionHtml("Turma 10 - Sáb. 2/4", groupBDates, "grupo-b"));
         sections.push(sundayHolidaySectionHtml("Domingos/Feriados do mês", sundayDates));
       }
 
@@ -2839,6 +3069,7 @@
             td.group-cell { width: 64px; min-width: 64px; max-width: 64px; text-align: center; font-weight: 700; color: #344256; background: #f6f8fa; }
             td.status-cell { width: 128px; min-width: 128px; max-width: 128px; text-align: center; font-weight: 400; }
             .plantao { background: #dff3e5; color: #176b35; }
+            .meio-dia { background: #e7f0ff; color: #1d4f91; }
             .folga { background: #f9e1df; color: #9a2c25; }
             .ferias { background: #fff3cd; color: #7a4d00; }
             .empty { background: #ffffff; color: #9aa4b2; }
@@ -2869,6 +3100,7 @@
     els.month.addEventListener("change", generateSchedule);
     document.getElementById("openDutyBtn").addEventListener("click", openDutyModal);
     document.getElementById("openVacationBtn").addEventListener("click", openVacationModal);
+    document.getElementById("openFixedMorningBtn").addEventListener("click", openFixedMorningModal);
     document.getElementById("toggleEditLockBtn").addEventListener("click", toggleEditLock);
     document.getElementById("generalViewBtn").addEventListener("click", () => setFilter("todos"));
     document.getElementById("sundayOffBtn").addEventListener("click", () => setFilter("folgas-dom-feriados"));
@@ -2892,6 +3124,12 @@
     document.getElementById("doneVacationModalBtn").addEventListener("click", closeVacationModal);
     els.vacationModal.addEventListener("click", event => {
       if (event.target === els.vacationModal) closeVacationModal();
+    });
+    document.getElementById("saveFixedMorningBtn").addEventListener("click", saveFixedMorningSelection);
+    document.getElementById("closeFixedMorningModalBtn").addEventListener("click", closeFixedMorningModal);
+    document.getElementById("cancelFixedMorningBtn").addEventListener("click", closeFixedMorningModal);
+    els.fixedMorningModal.addEventListener("click", event => {
+      if (event.target === els.fixedMorningModal) closeFixedMorningModal();
     });
     document.getElementById("addTechBtn").addEventListener("click", openTechnicianModal);
     document.getElementById("saveTechBtn").addEventListener("click", addTechnician);
