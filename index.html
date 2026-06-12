@@ -2548,11 +2548,11 @@
 
     function matchesFilter(row, visibleDates = state.dates) {
       if (state.activeFilter === "grupo-a") {
-        return visibleDates.some(dateInfo => ["PLANTÃO", FIXED_MORNING_STATUS].includes(row.assignments[dateInfo.iso]));
+        return visibleDates.some(dateInfo => ["PLANTÃO", FIXED_MORNING_STATUS, "FÉRIAS"].includes(row.assignments[dateInfo.iso]));
       }
 
       if (state.activeFilter === "grupo-b") {
-        return visibleDates.some(dateInfo => ["PLANTÃO", FIXED_MORNING_STATUS].includes(row.assignments[dateInfo.iso]));
+        return visibleDates.some(dateInfo => ["PLANTÃO", FIXED_MORNING_STATUS, "FÉRIAS"].includes(row.assignments[dateInfo.iso]));
       }
 
       if (state.activeFilter === "plantoes") {
@@ -2876,11 +2876,11 @@
     function printSectionRowsHtml(dates, mode) {
       const rows = state.rows.filter(row => {
         if (mode === "grupo-a") {
-          return dates.some(dateInfo => ["PLANTÃO", FIXED_MORNING_STATUS].includes(row.assignments[dateInfo.iso]));
+          return dates.some(dateInfo => ["PLANTÃO", FIXED_MORNING_STATUS, "FÉRIAS"].includes(row.assignments[dateInfo.iso]));
         }
 
         if (mode === "grupo-b") {
-          return dates.some(dateInfo => ["PLANTÃO", FIXED_MORNING_STATUS].includes(row.assignments[dateInfo.iso]));
+          return dates.some(dateInfo => ["PLANTÃO", FIXED_MORNING_STATUS, "FÉRIAS"].includes(row.assignments[dateInfo.iso]));
         }
 
         return dates.some(dateInfo => row.assignments[dateInfo.iso] === "PLANTÃO");
