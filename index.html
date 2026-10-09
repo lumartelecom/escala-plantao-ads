@@ -1877,8 +1877,8 @@
       if (allowedSunday && !allowedSunday.has(name)) {
         const row = state.rows.find(item => item.name === name);
         const label = row ? row.displayName : name;
-        window.alert(`${label} trabalhou o sábado inteiro, então não pode ficar no plantão deste domingo. No último sábado do mês, a rotação normal do plantão continua valendo.`);
-        return;
+        window.alert(`Atenção: ${label} trabalhou o sábado inteiro. A regra normal é não fazer o plantão deste domingo, mas você pode manter esta atribuição inicial manualmente. Nos próximos plantões, a regra normal será aplicada. No último sábado do mês, a rotação normal continua valendo.`);
+        // Exibe o aviso, mas permite a atribuição manual inicial.
       }
       if (dateInfo && dateInfo.weekday !== 6 && isSundayOrHoliday(dateInfo) && technicianHadPreviousMonthSundayHolidayDuty(name, iso)) {
         const row = state.rows.find(item => item.name === name);
