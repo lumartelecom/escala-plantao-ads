@@ -2246,12 +2246,19 @@
       const dutyRotationNames = baseRotationNames;
       const dutyOffset = dutyStartIndex(year, month, dutyRotationNames.length);
 
-      state.rows = state.technicians.map(tech => ({
-        name: tech.name,
-        displayName: state.displayNames.get(tech.name) || tech.name,
-        group: tech.group,
-        assignments: {}
-      }));
+      // A ordem visual acompanha a equipe atual: primeiro Alfa, depois Bravo.
+      // Mantemos state.technicians na ordem original para não alterar a rotação geral dos plantões.
+      state.rows = state.technicians
+        .map(tech => ({
+          name: tech.name,
+          displayName: state.displayNames.get(tech.name) || tech.name,
+          group: tech.group,
+          assignments: {}
+        }))
+        .sort((a, b) => {
+          const groupOrder = (a.group === "A" ? 0 : 1) - (b.group === "A" ? 0 : 1);
+          return groupOrder || a.displayName.localeCompare(b.displayName, "pt-BR");
+        });
 
       let dutyDateIndex = 0;
       const previousMonth = previousMonthParts(year, month);
