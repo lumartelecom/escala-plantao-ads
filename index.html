@@ -1874,13 +1874,25 @@
         return;
       }
       const allowedSunday = dateInfo ? allowedSundayNames(iso) : null;
-      if (allowedSunday && !allowedSunday.has(name)) {
+      const saturdayConflict = Boolean(allowedSunday && !allowedSunday.has(name));
+      const monthKey = iso.slice(0, 7);
+      const firstSundayHoliday = state.dates
+        .filter(item => item.iso.startsWith(monthKey) && item.weekday !== 6 && isSundayOrHoliday(item))
+        .sort((a, b) => a.iso.localeCompare(b.iso))[0];
+      const isInitialDuty = Boolean(firstSundayHoliday && firstSundayHoliday.iso === iso);
+
+      if (saturdayConflict && isInitialDuty) {
         const row = state.rows.find(item => item.name === name);
         const label = row ? row.displayName : name;
-        window.alert(`Atenção: ${label} trabalhou o sábado inteiro. A regra normal é não fazer o plantão deste domingo, mas você pode manter esta atribuição inicial manualmente. Nos próximos plantões, a regra normal será aplicada. No último sábado do mês, a rotação normal continua valendo.`);
-        // Exibe o aviso, mas permite a atribuição manual inicial.
+        window.alert(`Atenção: ${label} trabalhou o sábado inteiro. A regra normal é não fazer o plantão deste domingo, mas o plantão inicial pode ser registrado manualmente. Nos próximos plantões, a regra normal será aplicada. No último sábado do mês, a rotação normal continua valendo.`);
+        // O primeiro plantão do mês pode ser registrado manualmente apesar do conflito de sábado.
+      } else if (saturdayConflict) {
+        const row = state.rows.find(item => item.name === name);
+        const label = row ? row.displayName : name;
+        window.alert(`Não é possível escalar ${label} neste plantão: trabalhou o sábado inteiro. A regra normal será aplicada nos próximos plantões.`);
+        return;
       }
-      if (dateInfo && dateInfo.weekday !== 6 && isSundayOrHoliday(dateInfo) && technicianHadPreviousMonthSundayHolidayDuty(name, iso)) {
+      if (dateInfo && dateInfo.weekday !== 6 && isSundayOrHoliday(dateInfo) && technicianHadPreviousMonthSundayHolidayDuty(name, iso) && !(saturdayConflict && isInitialDuty)) {
         const row = state.rows.find(item => item.name === name);
         const label = row ? row.displayName : name;
         window.alert(`${label} já ficou em plantão de domingo/feriado no mês anterior.`);
