@@ -326,7 +326,7 @@
 
     .sheet-wrap {
       --name-col: 280px;
-      --group-col: 64px;
+      --group-col: 126px;
       --date-col: 112px;
       width: min(1180px, 100%);
       max-width: calc(100vw - 48px);
@@ -572,8 +572,8 @@
     }
 
     .group-select {
-      width: 48px;
-      min-width: 48px;
+      width: 100%;
+      min-width: 0;
       height: 24px;
       padding: 2px 4px;
       border-radius: 5px;
@@ -842,7 +842,7 @@
         background: #fff;
       }
       .print-report-section .print-group {
-        width: 22px;
+        width: 74px;
         font-weight: 800;
         background: #f6f8fa;
       }
@@ -970,8 +970,8 @@
           <div>
             <label for="techGroupInput">Equipe</label>
             <select id="techGroupInput">
-              <option value="A">Equipe Alfa</option>
-              <option value="B">Equipe Bravo</option>
+              <option value="A">Alfa</option>
+              <option value="B">Bravo</option>
             </select>
           </div>
           <button id="saveTechBtn" class="small" type="button">Adicionar</button>
@@ -1338,6 +1338,13 @@
       return group === "A" ? "Equipe Alfa" : "Equipe Bravo";
     }
 
+    // Identifica o último sábado do mês: nesse dia as duas equipes trabalham.
+    function isLastSaturdayOfMonth(iso) {
+      const [y, m, d] = iso.split("-").map(Number);
+      const date = new Date(Date.UTC(y, m - 1, d));
+      return date.getUTCDay() === 6 && date.getUTCMonth() !== new Date(Date.UTC(y, m - 1, d + 7)).getUTCMonth();
+    }
+
     // Alternância contínua entre meses: Alfa trabalha, Bravo folga no sábado seguinte, e assim por diante.
     function saturdayTeamForIso(iso) {
       const [ay, am, ad] = SATURDAY_ALFA_ANCHOR.split("-").map(Number);
@@ -1624,13 +1631,20 @@
       return new Date(Date.UTC(y, m - 1, d - 1)).toISOString().slice(0, 10);
     }
 
-    // Regra: quem folga no sábado também folga no domingo. No domingo só entra no plantão
-    // a equipe que trabalhou no sábado anterior. Feriados em dia de semana não têm essa restrição.
+    // Regra: quem trabalhou o sábado inteiro não faz o plantão do domingo seguinte.
+    // No último sábado do mês as duas equipes trabalham, então o domingo segue a rotação normal.
+    // Feriados em dia de semana não têm essa restrição.
     function allowedSundayNames(iso) {
       const [y, m, d] = iso.split("-").map(Number);
       if (new Date(Date.UTC(y, m - 1, d)).getUTCDay() !== 0) return null;
-      const team = saturdayTeamForIso(previousDayIso(iso));
-      return new Set(state.technicians.filter(tech => tech.group === team).map(tech => tech.name));
+      const previousSaturday = previousDayIso(iso);
+      if (isLastSaturdayOfMonth(previousSaturday)) {
+        return new Set(state.technicians.map(tech => tech.name));
+      }
+      const teamWorkingSaturday = saturdayTeamForIso(previousSaturday);
+      return new Set(state.technicians
+        .filter(tech => tech.group !== teamWorkingSaturday)
+        .map(tech => tech.name));
     }
 
     function dutyCandidateOrder(year, month, dutyDateIndex, dutyRotationNames, iso) {
@@ -1863,7 +1877,7 @@
       if (allowedSunday && !allowedSunday.has(name)) {
         const row = state.rows.find(item => item.name === name);
         const label = row ? row.displayName : name;
-        window.alert(`${label} folga no sábado anterior, então também folga neste domingo.`);
+        window.alert(`${label} trabalhou o sábado inteiro, então não pode ficar no plantão deste domingo. No último sábado do mês, a rotação normal do plantão continua valendo.`);
         return;
       }
       if (dateInfo && dateInfo.weekday !== 6 && isSundayOrHoliday(dateInfo) && technicianHadPreviousMonthSundayHolidayDuty(name, iso)) {
@@ -2219,7 +2233,10 @@
         let activeGroup = "";
 
         if (isSaturday) {
-          saturdayPlan[saturdayTeamForIso(dateInfo.iso)].forEach(name => selected.add(name));
+          const teamsWorking = isLastSaturdayOfMonth(dateInfo.iso)
+            ? state.technicians.map(tech => tech.name)
+            : saturdayPlan[saturdayTeamForIso(dateInfo.iso)];
+          teamsWorking.forEach(name => selected.add(name));
         } else if (isDutyDate) {
           const ordered = dutyCandidateOrder(year, month, dutyDateIndex, dutyRotationNames, dateInfo.iso);
           ordered
@@ -2479,7 +2496,7 @@
       nameTh.textContent = "TÉCNICOS";
       tr.appendChild(nameTh);
       const groupTh = document.createElement("th");
-      groupTh.textContent = "GRUPO";
+      groupTh.textContent = "EQUIPE";
       tr.appendChild(groupTh);
 
       visibleDates.forEach(dateInfo => {
@@ -2500,7 +2517,7 @@
       if (!wrap || !table) return;
 
       const availableWidth = Math.max(320, wrap.clientWidth - 2);
-      const groupWidth = 64;
+      const groupWidth = 150;
       const idealNameWidth = 280;
       const minNameWidth = dateCount >= 9 ? 126 : 155;
       const idealDateWidth = state.activeFilter === "todos" ? 108 : 112;
@@ -2750,7 +2767,7 @@
         return `
           <tr>
             <td class="print-name">${escapeHtml(row.displayName || row.name)}</td>
-            <td class="print-group">${escapeHtml(row.group)}</td>
+            <td class="print-group">${escapeHtml(teamLabel(row.group))}</td>
             ${cells}
           </tr>`;
       }).join("");
@@ -2767,7 +2784,7 @@
         <section class="print-report-section${wideClass}">
           <h2>${escapeHtml(title)}</h2>
           <table>
-            <thead><tr><th>TÉCNICOS</th><th>GRUPO</th>${headers}</tr></thead>
+            <thead><tr><th>TÉCNICOS</th><th>EQUIPE</th>${headers}</tr></thead>
             <tbody>${printSectionRowsHtml(dates, mode)}</tbody>
           </table>
         </section>`;
@@ -2804,13 +2821,13 @@
                 <td class="print-date">${escapeHtml(shortDate(dateInfo.iso))}</td>
                 <td>${escapeHtml(dateInfo.label)}</td>
                 <td class="print-duty-name">${escapeHtml(row.displayName || row.name)}</td>
-                <td class="print-group">${escapeHtml(row.group)}</td>
+                <td class="print-group">${escapeHtml(teamLabel(row.group))}</td>
               </tr>`);
             offRows.push(`
               <tr>
                 <td class="print-date">${escapeHtml(offDate)}</td>
                 <td class="print-duty-name">${escapeHtml(row.displayName || row.name)}</td>
-                <td class="print-group">${escapeHtml(row.group)}</td>
+                <td class="print-group">${escapeHtml(teamLabel(row.group))}</td>
                 <td>${escapeHtml(shortDate(dateInfo.iso))}</td>
                 <td>${escapeHtml(dateInfo.label)}</td>
               </tr>`);
@@ -2822,7 +2839,7 @@
           <h2>${escapeHtml(title)}</h2>
           <table>
             <thead>
-              <tr><th>DATA</th><th>DIA</th><th>PLANTONISTA</th><th>GRUPO</th></tr>
+              <tr><th>DATA</th><th>DIA</th><th>PLANTONISTA</th><th>EQUIPE</th></tr>
             </thead>
             <tbody>${dutyRows.join("") || `<tr><td colspan="4">Nenhum plantonista encontrado.</td></tr>`}</tbody>
           </table>
@@ -2831,7 +2848,7 @@
           <h2>Folgas dos Domingos/Feriados</h2>
           <table>
             <thead>
-              <tr><th>FOLGA</th><th>TÉCNICO</th><th>GRUPO</th><th>REF.</th><th>DIA</th></tr>
+              <tr><th>FOLGA</th><th>TÉCNICO</th><th>EQUIPE</th><th>REF.</th><th>DIA</th></tr>
             </thead>
             <tbody>${offRows.join("") || `<tr><td colspan="5">Nenhuma folga encontrada.</td></tr>`}</tbody>
           </table>
@@ -2896,7 +2913,7 @@
       tableClone.querySelectorAll("[title]").forEach(item => item.removeAttribute("title"));
       tableClone.querySelectorAll("select.group-select").forEach(select => {
         const td = select.closest("td");
-        if (td) td.textContent = select.value;
+        if (td) td.textContent = teamLabel(select.value);
       });
       const viewTitle = state.activeFilter === "folgas-dom-feriados" ? "Folgas Dom/Fer." : "Escala de Plantão";
       const monthLabel = els.month.value ? els.month.value : "";
@@ -2916,7 +2933,7 @@
             th:first-child, th:nth-child(2) { background: #0b2545; color: #ffffff; font-weight: 800; }
             th small { color: #d9e0e8; font-size: 9px; font-weight: 400; }
             td.name { width: 280px; min-width: 280px; max-width: 280px; font-weight: 400; color: #0b1f3a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-            td.group-cell { width: 64px; min-width: 64px; max-width: 64px; text-align: center; font-weight: 700; color: #344256; background: #f6f8fa; }
+            td.group-cell { width: 126px; min-width: 126px; max-width: 126px; text-align: center; font-weight: 700; color: #344256; background: #f6f8fa; }
             td.status-cell { width: 128px; min-width: 128px; max-width: 128px; text-align: center; font-weight: 400; }
             .plantao { background: #dff3e5; color: #176b35; }
             .folga { background: #f9e1df; color: #9a2c25; }
