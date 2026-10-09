@@ -6,20 +6,20 @@
   <title>Gerador de Escala de Plantão</title>
   <style>
     :root {
-      --bg: #f4f6f8;
+      --bg: #f2f7ff;
       --panel: #ffffff;
-      --ink: #1b2430;
-      --muted: #637083;
-      --line: #d9e0e8;
-      --accent: #176b87;
-      --accent-dark: #104d61;
-      --green: #dff3e5;
-      --green-ink: #176b35;
-      --red: #f9e1df;
-      --red-ink: #9a2c25;
-      --base: #e9f1fb;
-      --base-ink: #24527a;
-      --shadow: 0 14px 32px rgba(18, 32, 51, .10);
+      --ink: #102f5c;
+      --muted: #5d7292;
+      --line: #c6d7f0;
+      --accent: #2563eb;
+      --accent-dark: #1746a2;
+      --green: #e6efff;
+      --green-ink: #1d4ed8;
+      --red: #f1f5fc;
+      --red-ink: #536987;
+      --base: #dce9ff;
+      --base-ink: #1e40af;
+      --shadow: 0 6px 20px rgba(37, 99, 235, .10);
     }
 
     * { box-sizing: border-box; }
@@ -105,7 +105,7 @@
 
     input:focus, textarea:focus, select:focus {
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(23, 107, 135, .12);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .16);
     }
 
     textarea {
@@ -146,11 +146,11 @@
     button:hover { background: var(--accent-dark); }
 
     button.secondary {
-      color: var(--ink);
-      background: #e8edf2;
+      color: #1e40af;
+      background: #e6efff;
     }
 
-    button.secondary:hover { background: #d8e0e8; }
+    button.secondary:hover { background: #d3e2ff; }
 
     button.danger {
       background: #b9443d;
@@ -164,14 +164,15 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 14px;
+      gap: 10px;
     }
 
     .brand {
       display: flex;
       align-items: center;
       gap: 12px;
-      min-width: 280px;
+      min-width: 210px;
+      flex: 0 0 auto;
     }
 
     .brand img {
@@ -186,14 +187,16 @@
 
     .top-controls {
       display: flex;
-      align-items: end;
+      align-items: center;
       justify-content: flex-end;
-      flex-wrap: wrap;
-      gap: 8px;
+      flex-wrap: nowrap;
+      gap: 5px;
+      min-width: 0;
     }
 
     .top-field {
-      min-width: 136px;
+      min-width: 112px;
+      flex: 0 0 112px;
     }
 
     .top-field label {
@@ -207,11 +210,12 @@
     }
 
     button.small {
-      min-height: 34px;
-      padding: 7px 10px;
-      font-size: 12px;
-      line-height: 1.1;
+      min-height: 30px;
+      padding: 6px 8px;
+      font-size: 11px;
+      line-height: 1;
       white-space: nowrap;
+      flex: 0 0 auto;
     }
 
     button.small.active {
@@ -225,25 +229,27 @@
       width: min(1180px, 100%);
       margin: 0 auto 14px;
       display: grid;
-      grid-template-columns: repeat(3, minmax(145px, 1fr)) auto;
+      grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
       align-items: stretch;
-      gap: 8px;
+      gap: 6px;
     }
 
     .metric {
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 9px 11px;
+      padding: 7px 8px;
       box-shadow: var(--shadow);
-      min-height: 58px;
+      min-height: 54px;
+      min-width: 0;
+      overflow-wrap: anywhere;
     }
 
     .summary-actions {
       display: flex;
       align-items: stretch;
-      gap: 8px;
-      min-width: 142px;
+      gap: 5px;
+      min-width: 0;
     }
 
     .print-options {
@@ -251,8 +257,8 @@
       flex-direction: column;
       justify-content: center;
       gap: 3px;
-      min-width: 190px;
-      padding: 6px 8px;
+      min-width: 160px;
+      padding: 5px 6px;
       border: 1px solid var(--line);
       border-radius: 8px;
       background: #fff;
@@ -277,7 +283,7 @@
     }
 
     .summary-actions .small {
-      min-width: 66px;
+      min-width: 52px;
       height: 100%;
       border-radius: 8px;
       box-shadow: var(--shadow);
@@ -292,7 +298,7 @@
 
     button.metric:hover,
     button.metric.active {
-      background: #eef6f8;
+      background: #dce9ff;
       border-color: var(--accent);
     }
 
@@ -304,7 +310,7 @@
     .metric span {
       display: block;
       color: var(--muted);
-      font-size: 10px;
+      font-size: 9px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: .02em;
@@ -514,7 +520,7 @@
       position: sticky;
       top: 0;
       z-index: 1;
-      background: #17212f;
+      background: #18366f;
       color: #fff;
       font-weight: 700;
     }
@@ -532,7 +538,7 @@
       width: var(--name-col);
       min-width: var(--name-col);
       max-width: var(--name-col);
-      background: #0b2545;
+      background: #123574;
       color: #ffffff;
       font-size: 12px;
       font-weight: 800;
@@ -555,7 +561,7 @@
       width: var(--group-col);
       min-width: var(--group-col);
       max-width: var(--group-col);
-      background: #0b2545;
+      background: #123574;
       color: #ffffff;
       text-align: center;
       font-weight: 800;
@@ -579,7 +585,7 @@
       border-radius: 5px;
       border: 1px solid #b8c4d1;
       background: #ffffff;
-      color: #0b376d;
+      color: #1e40af;
       font-size: 11px;
       font-weight: 800;
       text-align: center;
@@ -625,18 +631,18 @@
     }
 
     .plantao {
-      background: var(--green);
-      color: var(--green-ink);
+      background: #e1ebff;
+      color: #124f96;
     }
 
     .folga {
-      background: var(--red);
-      color: var(--red-ink);
+      background: #f4f8fd;
+      color: #637b97;
     }
 
     .ferias {
-      background: #fff3cd;
-      color: #7a4d00;
+      background: #cbdcff;
+      color: #1746a2;
     }
 
     .empty {
@@ -678,6 +684,13 @@
     .file-row input[type="file"] {
       padding: 8px;
       font-size: 12px;
+    }
+
+    @media (max-width: 1180px) {
+      .toolbar { align-items: flex-start; flex-direction: column; }
+      .top-controls { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+      .summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .summary-actions { grid-column: 1 / -1; }
     }
 
     @media (max-width: 920px) {
@@ -807,7 +820,7 @@
       .print-report-section h2 {
         margin: 0;
         padding: 3px 5px;
-        background: #17212f;
+        background: #18366f;
         color: #fff;
         font-size: 9px;
       }
@@ -824,7 +837,7 @@
         vertical-align: middle;
       }
       .print-report-section th {
-        background: #17212f;
+        background: #18366f;
         color: #fff;
         font-weight: 800;
       }
@@ -933,6 +946,8 @@
         <button class="metric" type="button" data-filter="domingos"><span>Domingos/Feriados</span><strong id="sundayDutyTotal">0</strong></button>
         <button class="metric" type="button" data-filter="grupo-a"><span>Equipe Alfa</span><strong id="groupATotal">0</strong><span class="metric-sub" id="groupASub"></span></button>
         <button class="metric" type="button" data-filter="grupo-b"><span>Equipe Bravo</span><strong id="groupBTotal">0</strong><span class="metric-sub" id="groupBSub"></span></button>
+        <button class="metric" type="button" data-filter="ultimo-sabado"><span>Último sábado do mês</span><strong id="lastSaturdayTotal">0</strong><span class="metric-sub">Equipe completa · clique para ver</span></button>
+        <button class="metric" id="vacationSummaryBtn" type="button" aria-label="Ver técnicos de férias"><span>Técnicos de férias</span><strong id="vacationTechTotal">0</strong><span class="metric-sub">Clique para consultar</span></button>
         <div class="summary-actions">
           <div class="print-options" aria-label="Quadros para impressão">
             <label class="print-option"><input id="printGroupA" type="checkbox" checked> Equipe Alfa</label>
@@ -1394,7 +1409,12 @@
       if (!tech) return false;
       if (tech.group === targetGroup) return true;
 
+      // Troca a equipe com um técnico da equipe de destino para manter o equilíbrio.
+      const partner = promptSwapPartner(tech, targetGroup);
+      if (!partner) return false;
+      const previousGroup = tech.group;
       tech.group = targetGroup;
+      partner.group = previousGroup;
       state.saturdayOverrides = {};
       saveNames();
       saveSaturdayOverrides();
@@ -2371,6 +2391,13 @@
       els.groupBTotal.textContent = sizeB;
       els.groupASub.textContent = `${sizeA === 1 ? "técnico" : "técnicos"} · ${saturdayEvenTotal} sáb. no mês`;
       els.groupBSub.textContent = `${sizeB === 1 ? "técnico" : "técnicos"} · ${saturdayOddTotal} sáb. no mês`;
+      const vacationNames = new Set(state.vacations
+        .filter(item => state.dates.some(date => item.start <= date.iso && date.iso <= item.end))
+        .map(item => item.name));
+      const vacationTotal = document.getElementById("vacationTechTotal");
+      if (vacationTotal) vacationTotal.textContent = vacationNames.size;
+      const lastSaturdayTotal = document.getElementById("lastSaturdayTotal");
+      if (lastSaturdayTotal) lastSaturdayTotal.textContent = state.dates.filter(dateInfo => dateInfo.weekday === 6 && isLastSaturdayOfMonth(dateInfo.iso)).length;
 
       state.rows.forEach(row => {
         state.dates.forEach(dateInfo => {
@@ -2427,7 +2454,11 @@
 
       if (state.activeFilter === "grupo-a" || state.activeFilter === "grupo-b") {
         const targetTeam = state.activeFilter === "grupo-a" ? "A" : "B";
-        return state.dates.filter(dateInfo => dateInfo.weekday === 6 && saturdayTeamForIso(dateInfo.iso) === targetTeam);
+        return state.dates.filter(dateInfo => dateInfo.weekday === 6 && !isLastSaturdayOfMonth(dateInfo.iso) && saturdayTeamForIso(dateInfo.iso) === targetTeam);
+      }
+
+      if (state.activeFilter === "ultimo-sabado") {
+        return state.dates.filter(dateInfo => dateInfo.weekday === 6 && isLastSaturdayOfMonth(dateInfo.iso));
       }
 
       return state.dates;
@@ -2476,6 +2507,12 @@
       });
       const generalActive = state.activeFilter === "todos";
       const sundayOffActive = state.activeFilter === "folgas-dom-feriados";
+      const lastSaturdayActive = state.activeFilter === "ultimo-sabado";
+      const lastSaturdayBtn = document.querySelector('[data-filter="ultimo-sabado"]');
+      if (lastSaturdayBtn) {
+        lastSaturdayBtn.classList.toggle("active", lastSaturdayActive);
+        lastSaturdayBtn.setAttribute("aria-pressed", String(lastSaturdayActive));
+      }
       els.generalViewBtn.classList.toggle("active", generalActive);
       els.sundayOffBtn.classList.toggle("active", sundayOffActive);
       els.generalViewBtn.setAttribute("aria-pressed", String(generalActive));
@@ -2941,8 +2978,8 @@
             .excel-subtitle { font-size: 12px; color: #637083; margin-bottom: 12px; }
             table { border-collapse: collapse; font-family: Arial, Helvetica, sans-serif; width: auto; }
             th, td { border: 1px solid #aeb8c4; padding: 5px 7px; height: 28px; font-size: 11px; vertical-align: middle; }
-            th { background: #17212f; color: #ffffff; font-weight: 700; text-align: left; }
-            th:first-child, th:nth-child(2) { background: #0b2545; color: #ffffff; font-weight: 800; }
+            th { background: #18366f; color: #ffffff; font-weight: 700; text-align: left; }
+            th:first-child, th:nth-child(2) { background: #123574; color: #ffffff; font-weight: 800; }
             th small { color: #d9e0e8; font-size: 9px; font-weight: 400; }
             td.name { width: 280px; min-width: 280px; max-width: 280px; font-weight: 400; color: #0b1f3a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
             td.group-cell { width: 126px; min-width: 126px; max-width: 126px; text-align: center; font-weight: 700; color: #344256; background: #f6f8fa; }
@@ -2978,6 +3015,7 @@
     els.month.addEventListener("change", generateSchedule);
     document.getElementById("openDutyBtn").addEventListener("click", openDutyModal);
     document.getElementById("openVacationBtn").addEventListener("click", openVacationModal);
+    document.getElementById("vacationSummaryBtn").addEventListener("click", openVacationModal);
     document.getElementById("toggleEditLockBtn").addEventListener("click", toggleEditLock);
     document.getElementById("generalViewBtn").addEventListener("click", () => setFilter("todos"));
     document.getElementById("sundayOffBtn").addEventListener("click", () => setFilter("folgas-dom-feriados"));
