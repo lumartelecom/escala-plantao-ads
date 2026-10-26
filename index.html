@@ -768,6 +768,62 @@
       }
     }
 
+    /* ===== Reorganização de layout ===== */
+    body { font-family: "IBM Plex Sans", Arial, Helvetica, sans-serif; font-size: 14px; }
+    main { padding: 20px 24px 32px; }
+
+    .toolbar { width: min(1280px, 100%); flex-direction: column; align-items: stretch; gap: 14px; margin-bottom: 16px; }
+    .brand { min-width: 0; gap: 14px; }
+    .brand img { width: 48px; height: 48px; }
+    h1 { margin: 0; font-size: 22px; font-weight: 700; line-height: 1.25; }
+    .top-controls { width: 100%; flex-wrap: wrap; justify-content: flex-start; align-items: flex-end; gap: 8px; }
+    .top-field { flex: 0 0 150px; min-width: 150px; }
+    .top-field label { margin: 0 0 4px; font-size: 12px; text-transform: none; letter-spacing: 0; }
+    .top-field input { height: 38px; font-size: 14px; }
+    button.small { min-height: 38px; padding: 8px 14px; font-size: 13px; line-height: 1.2; font-weight: 600; }
+    .sync-status { margin-left: auto; align-self: center; font-size: 13px; padding: 8px 12px; }
+
+    .summary { width: min(1280px, 100%); grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+    .metric { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; padding: 12px 14px; min-height: 96px; overflow-wrap: normal; }
+    .metric span { font-size: 13px; font-weight: 600; text-transform: none; letter-spacing: 0; line-height: 1.3; }
+    .metric strong { margin-top: 6px; font-size: 28px; }
+    .metric .metric-sub { margin-top: 6px; font-size: 12px; font-weight: 400; line-height: 1.35; }
+    .summary-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+    .print-options { flex: 1 1 auto; justify-content: flex-start; align-items: center; flex-direction: row; flex-wrap: wrap; gap: 6px 20px; min-width: 0; padding: 9px 14px; }
+    .print-option { font-size: 13px; font-weight: 600; text-transform: none; letter-spacing: 0; white-space: normal; margin: 0; }
+    .summary-actions .small { height: 40px; min-width: 96px; flex: 0 0 auto; }
+
+    .sheet-wrap { width: min(1280px, 100%); max-width: 100%; overflow-x: auto; overflow-y: auto; max-height: 78vh; }
+    table { width: auto; min-width: 100%; max-width: none; }
+    th, td { padding: 8px 10px; height: 42px; font-size: 13px; }
+    th { font-size: 12px; line-height: 1.25; }
+    th small { margin-top: 3px; font-size: 11px; white-space: normal; }
+    #scheduleTable th:first-child { z-index: 4; left: 0; font-size: 13px; }
+    td.name { position: sticky; left: 0; z-index: 2; background: #fff; white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.3; font-weight: 500; box-shadow: 1px 0 0 #aeb8c4; }
+    .group-select { height: 30px; font-size: 12px; }
+    td.status-cell { font-size: 13px; }
+    .hint { font-size: 13px; }
+    .modal-header h2 { font-size: 19px; }
+    .tech-item strong { font-size: 14px; }
+    label { text-transform: none; letter-spacing: 0; font-size: 13px; }
+
+    @media (max-width: 1100px) {
+      .summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 700px) {
+      main { padding: 14px 12px 24px; }
+      h1 { font-size: 18px; }
+      .brand img { width: 40px; height: 40px; }
+      .top-controls { gap: 6px; }
+      .top-field { flex: 1 1 100%; }
+      button.small { flex: 1 1 auto; padding: 8px 10px; }
+      .sync-status { margin-left: 0; width: 100%; justify-content: center; }
+      .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .metric { min-height: 84px; }
+      .sheet-wrap { max-height: none; }
+      th, td { padding: 6px 7px; height: 38px; font-size: 12px; }
+    }
+
     @page {
       size: A4 portrait;
       margin: 5mm;
@@ -944,6 +1000,8 @@
       }
     }
   </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="app">
@@ -2510,36 +2568,23 @@
       const table = document.getElementById("scheduleTable");
       if (!wrap || !table) return;
 
+      const narrow = window.innerWidth <= 700;
       const availableWidth = Math.max(320, wrap.clientWidth - 2);
-      const groupWidth = 150;
-      const idealNameWidth = 280;
-      const minNameWidth = dateCount >= 9 ? 126 : 155;
-      const idealDateWidth = state.activeFilter === "todos" ? 108 : 112;
-      const minDateWidth = state.activeFilter === "todos" ? 68 : 76;
+      const nameWidth = narrow ? 132 : 230;
+      const groupWidth = narrow ? 78 : 130;
+      let dateWidth = narrow ? 86 : 78;
 
-      let dateWidth = idealDateWidth;
-      let nameWidth = availableWidth - groupWidth - (dateCount * dateWidth);
-
-      if (dateCount <= 0) {
-        nameWidth = idealNameWidth;
-      } else if (nameWidth < minNameWidth) {
-        nameWidth = minNameWidth;
-        dateWidth = Math.floor((availableWidth - groupWidth - nameWidth) / dateCount);
-        dateWidth = Math.max(minDateWidth, Math.min(idealDateWidth, dateWidth));
-
-        const totalWithMinimums = nameWidth + groupWidth + (dateCount * dateWidth);
-        if (totalWithMinimums > availableWidth) {
-          nameWidth = Math.max(104, availableWidth - groupWidth - (dateCount * dateWidth));
-        }
-      } else {
-        nameWidth = Math.min(idealNameWidth, nameWidth);
+      if (dateCount > 0) {
+        const fill = Math.floor((availableWidth - nameWidth - groupWidth) / dateCount);
+        dateWidth = Math.max(dateWidth, Math.min(fill, 170));
       }
 
-      wrap.style.setProperty("--name-col", `${Math.round(nameWidth)}px`);
+      const total = nameWidth + groupWidth + Math.max(dateCount, 1) * dateWidth;
+      wrap.style.setProperty("--name-col", `${nameWidth}px`);
       wrap.style.setProperty("--group-col", `${groupWidth}px`);
-      wrap.style.setProperty("--date-col", `${Math.round(dateWidth)}px`);
-      table.style.width = "100%";
-      table.style.maxWidth = "100%";
+      wrap.style.setProperty("--date-col", `${dateWidth}px`);
+      table.style.width = `${Math.max(total, availableWidth)}px`;
+      table.style.maxWidth = "none";
     }
 
     function cell(value, className) {
