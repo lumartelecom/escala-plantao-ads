@@ -185,6 +185,33 @@
       flex: 0 0 auto;
     }
 
+    .sync-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: #eef1f5;
+      color: #4b5563;
+      white-space: nowrap;
+    }
+    .sync-status::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #9ca3af;
+    }
+    .sync-status.ok { background: #e6f4ea; color: #14612c; }
+    .sync-status.ok::before { background: #1e9e47; }
+    .sync-status.busy { background: #fff4d6; color: #7a5600; }
+    .sync-status.busy::before { background: #e0a100; }
+    .sync-status.err { background: #fde7e7; color: #8a1c1c; }
+    .sync-status.err::before { background: #d33; }
+    @media print { .sync-status { display: none !important; } }
+
     .top-controls {
       display: flex;
       align-items: center;
@@ -939,6 +966,7 @@
           <button id="sundayOffBtn" class="small" type="button">Folgas Dom/Fer.</button>
           <button id="addTechBtn" class="small" type="button">Adicionar técnico</button>
           <button id="toggleEditLockBtn" class="small secondary" type="button">Bloquear edição</button>
+          <span id="syncStatus" class="sync-status" role="status" aria-live="polite">Iniciando…</span>
         </div>
       </div>
 
@@ -1275,26 +1303,32 @@
 
     function saveNames() {
       localStorage.setItem("escala_plantao_tecnicos", JSON.stringify(state.technicians));
+      syncQueue("tecnicos");
     }
 
     function saveManualAssignments() {
       localStorage.setItem("escala_plantao_manual", JSON.stringify(state.manualAssignments));
+      syncQueue("manual");
     }
 
     function saveManualRemovals() {
       localStorage.setItem("escala_plantao_manual_remocoes", JSON.stringify(state.manualRemovals));
+      syncQueue("remocoes");
     }
 
     function saveManualCompensatoryOffs() {
       localStorage.setItem("escala_plantao_folgas_dom_feriados", JSON.stringify(state.manualCompensatoryOffs));
+      syncQueue("folgas");
     }
 
     function saveVacations() {
       localStorage.setItem("escala_plantao_ferias", JSON.stringify(state.vacations));
+      syncQueue("ferias");
     }
 
     function saveEditLock() {
       localStorage.setItem("escala_plantao_edicao_bloqueada", state.editLocked ? "1" : "0");
+      syncQueue("bloqueio");
     }
 
     function editingIsLocked() {
@@ -2967,9 +3001,219 @@
       button.addEventListener("click", () => setFilter(button.dataset.filter));
     });
 
+    // ============================================================
+    // SINCRONIZAÇÃO ENTRE NAVEGADORES (Firebase Firestore)
+    // Cole abaixo a config do seu projeto Firebase (Console > Configurações do projeto > Seus apps > Web).
+    // Pode ser o mesmo projeto dos outros sistemas; os dados ficam no documento escala_plantao/estado.
+    // Enquanto estiver vazio, o sistema funciona só localmente, como antes.
+    // ============================================================
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyDEYcuexanXmsTddfth0Pky9L7sAA3pFhg",
+      authDomain: "escala-ads.firebaseapp.com",
+      projectId: "escala-ads",
+      storageBucket: "escala-ads.firebasestorage.app",
+      messagingSenderId: "928945692759",
+      appId: "1:928945692759:web:07805b51b23cd122a84312"
+    };
+    const FIREBASE_SDK = "10.14.1";
+    const SYNC_COLLECTION = "escala_plantao";
+    const SYNC_DOC_ID = "estado";
+    const SYNC_NAMES_VERSION = "2026-10-08-equipes"; // manter igual a NAMES_VERSION de loadNames()
+
+    const sync = {
+      enabled: false,
+      ready: false,
+      fb: null,
+      ref: null,
+      lastJson: {},       // último JSON conhecido como igual ao do servidor, por campo
+      pending: new Set(), // campos com alteração local ainda não enviada
+      timer: null,
+      clientId: Math.random().toString(36).slice(2, 8)
+    };
+
+    // campo remoto -> acesso ao estado local
+    const SYNC_FIELDS = {
+      tecnicos: { local: "escala_plantao_tecnicos",
+        get: () => state.technicians,
+        set: v => { state.technicians = normalizeTechnicians(v); } },
+      manual: { local: "escala_plantao_manual",
+        get: () => state.manualAssignments,
+        set: v => { state.manualAssignments = v && typeof v === "object" ? v : {}; } },
+      remocoes: { local: "escala_plantao_manual_remocoes",
+        get: () => state.manualRemovals,
+        set: v => { state.manualRemovals = v && typeof v === "object" ? v : {}; } },
+      folgas: { local: "escala_plantao_folgas_dom_feriados",
+        get: () => state.manualCompensatoryOffs,
+        set: v => { state.manualCompensatoryOffs = v && typeof v === "object" ? v : {}; } },
+      ferias: { local: "escala_plantao_ferias",
+        get: () => state.vacations,
+        set: v => { state.vacations = normalizeVacations(v); } },
+      bloqueio: { local: "escala_plantao_edicao_bloqueada",
+        get: () => state.editLocked,
+        set: v => { state.editLocked = v === true; } }
+    };
+
+    function syncSerialize(field) {
+      return JSON.stringify(SYNC_FIELDS[field].get());
+    }
+
+    function setSyncStatus(kind, text) {
+      const el = document.getElementById("syncStatus");
+      if (!el) return;
+      el.className = "sync-status" + (kind ? " " + kind : "");
+      el.textContent = text;
+    }
+
+    function syncTime() {
+      return new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function syncQueue(field) {
+      if (!sync.enabled) return;
+      sync.pending.add(field);
+      if (!sync.ready) return; // será enviado quando a primeira leitura terminar
+      clearTimeout(sync.timer);
+      sync.timer = setTimeout(syncFlush, 400);
+    }
+
+    function syncFlush() {
+      if (!sync.enabled || !sync.ready) return;
+      const payload = {};
+      sync.pending.forEach(field => {
+        const json = syncSerialize(field);
+        if (json !== sync.lastJson[field]) payload[field] = json; // só envia o que realmente mudou
+      });
+      sync.pending.clear();
+      const fields = Object.keys(payload);
+      if (!fields.length) return;
+
+      const { setDoc, serverTimestamp } = sync.fb;
+      payload.atualizadoEm = serverTimestamp();
+      payload.atualizadoPor = sync.clientId;
+      fields.forEach(field => { sync.lastJson[field] = payload[field]; });
+      setSyncStatus("busy", "Enviando…");
+      setDoc(sync.ref, payload, { merge: true })
+        .then(() => setSyncStatus("ok", "Sincronizado " + syncTime()))
+        .catch(error => {
+          console.error("Erro ao enviar para o Firebase:", error);
+          fields.forEach(field => { delete sync.lastJson[field]; sync.pending.add(field); });
+          setSyncStatus("err", "Falha ao sincronizar");
+          clearTimeout(sync.timer);
+          sync.timer = setTimeout(syncFlush, 5000);
+        });
+    }
+
+    function syncModalIsOpen(modal) {
+      return modal && modal.classList.contains("open");
+    }
+
+    function syncApplySnapshot(snapshot) {
+      // Eco da nossa própria escrita ainda não confirmada: o estado local já está certo.
+      if (snapshot.metadata.hasPendingWrites) return;
+
+      const data = snapshot.exists() ? snapshot.data() : null;
+      const toPush = [];
+      let changed = false;
+
+      if (!data) {
+        // Primeira vez: o navegador que abrir primeiro cria o documento com os dados dele.
+        Object.keys(SYNC_FIELDS).forEach(field => toPush.push(field));
+      } else {
+        Object.keys(SYNC_FIELDS).forEach(field => {
+          const remoteJson = data[field];
+          if (typeof remoteJson !== "string") { toPush.push(field); return; } // campo novo: semeia com o local
+          if (sync.pending.has(field)) return; // alteração local em andamento tem prioridade
+          if (remoteJson === syncSerialize(field)) { sync.lastJson[field] = remoteJson; return; }
+          if (remoteJson === sync.lastJson[field]) return;
+          try {
+            SYNC_FIELDS[field].set(JSON.parse(remoteJson));
+          } catch (error) {
+            console.error("Dado remoto inválido em", field, error);
+            return;
+          }
+          sync.lastJson[field] = remoteJson;
+          localStorage.setItem(SYNC_FIELDS[field].local, field === "bloqueio" ? (state.editLocked ? "1" : "0") : syncSerialize(field));
+          changed = true;
+        });
+
+        // Reset de técnicos por versão (mesmo comportamento do loadNames), só se a versão remota for mais antiga.
+        if (!data.versaoNomes || data.versaoNomes < SYNC_NAMES_VERSION) {
+          state.technicians = normalizeTechnicians(defaultNames.slice());
+          localStorage.setItem(SYNC_FIELDS.tecnicos.local, syncSerialize("tecnicos"));
+          sync.lastJson.tecnicos = undefined;
+          toPush.push("tecnicos");
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        relinkSavedNames();
+        generateSchedule();
+        updateEditLockControls();
+        if (syncModalIsOpen(els.techModal)) renderTechnicianList();
+        if (syncModalIsOpen(els.vacationModal)) { renderVacationOptions(); renderVacationList(); }
+        if (syncModalIsOpen(els.dutyModal)) { renderDutyOptions(); renderCurrentDutyList(); }
+      }
+
+      const first = !sync.ready;
+      sync.ready = true;
+      if (toPush.length || first) {
+        toPush.forEach(field => sync.pending.add(field));
+        if (!data || !data.versaoNomes || data.versaoNomes < SYNC_NAMES_VERSION) sync.pending.add("tecnicos");
+        syncFlush();
+        if (!data || !data.versaoNomes || data.versaoNomes < SYNC_NAMES_VERSION) {
+          sync.fb.setDoc(sync.ref, { versaoNomes: SYNC_NAMES_VERSION }, { merge: true }).catch(() => {});
+        }
+      }
+      if (!sync.pending.size) setSyncStatus("ok", "Sincronizado " + syncTime());
+    }
+
+    async function syncStart() {
+      const hasConfig = FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.projectId && FIREBASE_CONFIG.appId;
+      if (!hasConfig) {
+        setSyncStatus("", "Somente local (Firebase não configurado)");
+        return;
+      }
+      sync.enabled = true;
+      setSyncStatus("busy", "Conectando…");
+      try {
+        const base = "https://www.gstatic.com/firebasejs/" + FIREBASE_SDK + "/";
+        const [appMod, fsMod] = await Promise.all([
+          import(base + "firebase-app.js"),
+          import(base + "firebase-firestore.js")
+        ]);
+        const app = appMod.initializeApp(FIREBASE_CONFIG);
+        let db;
+        try {
+          // cache offline: alterações feitas sem internet são enviadas quando a conexão voltar
+          db = fsMod.initializeFirestore(app, {
+            localCache: fsMod.persistentLocalCache({ tabManager: fsMod.persistentMultipleTabManager() })
+          });
+        } catch (error) {
+          db = fsMod.getFirestore(app);
+        }
+        sync.fb = { setDoc: fsMod.setDoc, serverTimestamp: fsMod.serverTimestamp };
+        sync.ref = fsMod.doc(db, SYNC_COLLECTION, SYNC_DOC_ID);
+        fsMod.onSnapshot(sync.ref, snapshot => {
+          try { syncApplySnapshot(snapshot); } catch (error) { console.error(error); setSyncStatus("err", "Erro ao aplicar dados"); }
+        }, error => {
+          console.error("Erro no Firebase:", error);
+          const denied = error && error.code === "permission-denied";
+          setSyncStatus("err", denied ? "Sem permissão (regras do Firestore)" : "Sem conexão com o Firebase");
+        });
+        window.addEventListener("offline", () => setSyncStatus("err", "Offline: alterações ficam salvas localmente"));
+        window.addEventListener("online", () => { setSyncStatus("busy", "Reconectando…"); syncQueue("tecnicos"); });
+      } catch (error) {
+        console.error("Falha ao iniciar o Firebase:", error);
+        sync.enabled = false;
+        setSyncStatus("err", "Firebase indisponível (modo local)");
+      }
+    }
+
     loadNames();
     setDefaultMonth();
     generateSchedule();
+    syncStart();
   </script>
 </body>
 </html>
