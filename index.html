@@ -946,7 +946,7 @@
         <button class="metric" type="button" data-filter="domingos"><span>Domingos/Feriados</span><strong id="sundayDutyTotal">0</strong></button>
         <button class="metric" type="button" data-filter="grupo-a"><span>Equipe Alfa</span><strong id="groupATotal">0</strong><span class="metric-sub" id="groupASub"></span></button>
         <button class="metric" type="button" data-filter="grupo-b"><span>Equipe Bravo</span><strong id="groupBTotal">0</strong><span class="metric-sub" id="groupBSub"></span></button>
-        <button class="metric" type="button" data-filter="ultimo-sabado"><span>Último sábado do mês</span><strong id="lastSaturdayTotal">0</strong><span class="metric-sub">Equipe completa · clique para ver</span></button>
+        <button class="metric" type="button" data-filter="ultimo-sabado"><span>Último sábado do mês</span><strong id="lastSaturdayTotal">0</strong><span class="metric-sub">Todos trabalham; compensação só para a equipe que repete</span></button>
         <button class="metric" id="vacationSummaryBtn" type="button" aria-label="Ver técnicos de férias"><span>Técnicos de férias</span><strong id="vacationTechTotal">0</strong><span class="metric-sub">Clique para consultar</span></button>
         <div class="summary-actions">
           <div class="print-options" aria-label="Quadros para impressão">
@@ -2251,6 +2251,20 @@
         scaleTr.appendChild(cell(row.displayName, "name"));
           scaleTr.appendChild(groupCell(row));
 
+        if (state.activeFilter === "ultimo-sabado") {
+          const lastSaturday = visibleDates.find(dateInfo => isLastSaturdayOfMonth(dateInfo.iso));
+          const compensationTd = cell(
+            lastSaturday && row.group === repeatingTeamForLastSaturday(lastSaturday.iso) ? "SIM — 4 HORAS" : "NÃO",
+            `status-cell ${lastSaturday && row.group === repeatingTeamForLastSaturday(lastSaturday.iso) ? "status-duty" : "status-off"}`
+          );
+          compensationTd.title = lastSaturday
+            ? (row.group === repeatingTeamForLastSaturday(lastSaturday.iso)
+                ? "Equipe que repete o sábado: tem direito à compensação de meio período, conforme regra da empresa."
+                : "Equipe já escalada normalmente: sem compensação extra por repetição.")
+            : "";
+          scaleTr.appendChild(compensationTd);
+        }
+
         visibleDates.forEach(dateInfo => {
           const value = row.assignments[dateInfo.iso] || "";
           scaleTr.appendChild(statusCell(displayValueForFilter(value), index, dateInfo, value, row.name));
@@ -2438,6 +2452,12 @@
       const groupTh = document.createElement("th");
       groupTh.textContent = "EQUIPE";
       tr.appendChild(groupTh);
+
+      if (state.activeFilter === "ultimo-sabado") {
+        const compensationTh = document.createElement("th");
+        compensationTh.textContent = "FOLGA COMPENSATÓRIA";
+        tr.appendChild(compensationTh);
+      }
 
       visibleDates.forEach(dateInfo => {
         const th = document.createElement("th");
@@ -2670,6 +2690,12 @@
 
     function saturdayGroupForDate(iso) {
       return saturdayTeamForIso(iso);
+    }
+
+    // No último sábado, a equipe da alternância já estaria escalada normalmente.
+    // A outra equipe é a que repete a jornada e tem direito à compensação de meio período.
+    function repeatingTeamForLastSaturday(iso) {
+      return saturdayTeamForIso(iso) === "A" ? "B" : "A";
     }
 
     function printSectionRowsHtml(dates, mode) {
